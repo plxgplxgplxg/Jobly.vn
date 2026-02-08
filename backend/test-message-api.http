@@ -1,0 +1,20 @@
+### Test Message API
+
+@baseUrl = http://localhost:5001
+@token = YOUR_JWT_TOKEN_HERE
+
+### 1. List conversations
+GET {{baseUrl}}/messages/conversations
+Authorization: Bearer {{token}}
+
+### 2. Get conversation with specific user
+GET {{baseUrl}}/messages/conversations/OTHER_USER_ID
+Authorization: Bearer {{token}}
+
+### 3. Get messages in conversation
+GET {{baseUrl}}/messages/conversations/CONVERSATION_ID/messages?limit=50
+Authorization: Bearer {{token}}
+
+### 4. Mark conversation as read
+POST {{baseUrl}}/messages/conversations/CONVERSATION_ID/mark-read
+Authorization: Bearer {{token}}

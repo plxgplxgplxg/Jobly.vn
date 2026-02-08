@@ -1,0 +1,160 @@
+### Variables
+@baseUrl = http://localhost:5001
+@adminToken = YOUR_ADMIN_JWT_TOKEN_HERE
+
+### Health Check
+GET {{baseUrl}}/health
+
+### ============================================
+### QUẢN LÝ NGƯỜI DÙNG
+### ============================================
+
+### List all users
+GET {{baseUrl}}/admin/users?page=1&limit=20
+Authorization: Bearer {{adminToken}}
+
+### List users by role
+GET {{baseUrl}}/admin/users?role=candidate&page=1&limit=20
+Authorization: Bearer {{adminToken}}
+
+### List users by status
+GET {{baseUrl}}/admin/users?status=active&page=1&limit=20
+Authorization: Bearer {{adminToken}}
+
+### Search users by keyword
+GET {{baseUrl}}/admin/users?keyword=test&page=1&limit=20
+Authorization: Bearer {{adminToken}}
+
+### Lock user
+POST {{baseUrl}}/admin/users/USER_ID_HERE/lock
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "reason": "Vi phạm quy định sử dụng"
+}
+
+### Unlock user
+POST {{baseUrl}}/admin/users/USER_ID_HERE/unlock
+Authorization: Bearer {{adminToken}}
+
+### Send warning to user
+POST {{baseUrl}}/admin/users/USER_ID_HERE/warning
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "message": "Vui lòng tuân thủ quy định của hệ thống"
+}
+
+### Delete user (soft delete)
+DELETE {{baseUrl}}/admin/users/USER_ID_HERE
+Authorization: Bearer {{adminToken}}
+
+### ============================================
+### DUYỆT TIN TUYỂN DỤNG
+### ============================================
+
+### List pending jobs
+GET {{baseUrl}}/admin/jobs/pending?page=1&limit=20
+Authorization: Bearer {{adminToken}}
+
+### Approve job
+POST {{baseUrl}}/admin/jobs/JOB_ID_HERE/approve
+Authorization: Bearer {{adminToken}}
+
+### Reject job
+POST {{baseUrl}}/admin/jobs/JOB_ID_HERE/reject
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "reason": "Nội dung không phù hợp với quy định"
+}
+
+### ============================================
+### QUẢN LÝ CV TEMPLATES
+### ============================================
+
+### List all templates
+GET {{baseUrl}}/admin/cv-templates?page=1&limit=20
+Authorization: Bearer {{adminToken}}
+
+### List templates by category
+GET {{baseUrl}}/admin/cv-templates?category=Professional&page=1&limit=20
+Authorization: Bearer {{adminToken}}
+
+### Create template
+POST {{baseUrl}}/admin/cv-templates
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "name": "CV Template IT Professional",
+  "category": "Professional",
+  "structureJSON": {
+    "sections": [
+      {
+        "id": "personal",
+        "type": "personal",
+        "label": "Thông tin cá nhân",
+        "required": true,
+        "fields": [
+          {
+            "name": "fullName",
+            "type": "text",
+            "label": "Họ và tên",
+            "required": true
+          },
+          {
+            "name": "email",
+            "type": "text",
+            "label": "Email",
+            "required": true
+          }
+        ]
+      }
+    ]
+  },
+  "htmlTemplate": "<html><body><h1>{{personal.fullName}}</h1></body></html>",
+  "cssStyles": "body { font-family: Arial; }",
+  "previewImageUrl": "https://example.com/preview.jpg"
+}
+
+### Update template
+PUT {{baseUrl}}/admin/cv-templates/TEMPLATE_ID_HERE
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "name": "CV Template IT Professional - Updated",
+  "category": "Modern"
+}
+
+### Delete template
+DELETE {{baseUrl}}/admin/cv-templates/TEMPLATE_ID_HERE
+Authorization: Bearer {{adminToken}}
+
+### ============================================
+### BÁO CÁO THỐNG KÊ
+### ============================================
+
+### Get statistics
+GET {{baseUrl}}/admin/statistics?dateFrom=2024-01-01&dateTo=2024-12-31
+Authorization: Bearer {{adminToken}}
+
+### Export users report (Excel)
+GET {{baseUrl}}/admin/reports/export?type=users&dateFrom=2024-01-01&dateTo=2024-12-31&format=excel
+Authorization: Bearer {{adminToken}}
+
+### Export jobs report (Excel)
+GET {{baseUrl}}/admin/reports/export?type=jobs&dateFrom=2024-01-01&dateTo=2024-12-31&format=excel
+Authorization: Bearer {{adminToken}}
+
+### Export applications report (Excel)
+GET {{baseUrl}}/admin/reports/export?type=applications&dateFrom=2024-01-01&dateTo=2024-12-31&format=excel
+Authorization: Bearer {{adminToken}}
+
+### Export users report (PDF)
+GET {{baseUrl}}/admin/reports/export?type=users&dateFrom=2024-01-01&dateTo=2024-12-31&format=pdf
+Authorization: Bearer {{adminToken}}

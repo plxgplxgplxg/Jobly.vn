@@ -1,0 +1,138 @@
+### Test Application API
+
+### 1. Login as Candidate
+POST http://localhost:5001/auth/login
+Content-Type: application/json
+
+{
+  "identifier": "candidate@test.com",
+  "password": "Test1234"
+}
+
+### 2. Login as Employer
+POST http://localhost:5001/auth/login
+Content-Type: application/json
+
+{
+  "identifier": "employer@test.com",
+  "password": "Test1234"
+}
+
+### 3. Create Application (Candidate only)
+# Thay YOUR_CANDIDATE_TOKEN bằng token từ login candidate
+POST http://localhost:5001/applications
+Authorization: Bearer YOUR_CANDIDATE_TOKEN
+Content-Type: application/json
+
+{
+  "jobId": "JOB_UUID_HERE",
+  "cvId": "CV_UUID_HERE",
+  "cvType": "uploaded",
+  "coverLetter": "Tôi rất quan tâm đến vị trí này và tin rằng tôi phù hợp với yêu cầu công việc."
+}
+
+### 4. Get Application Details
+GET http://localhost:5001/applications/APPLICATION_UUID_HERE
+Authorization: Bearer YOUR_CANDIDATE_TOKEN
+
+### 5. Update Application (Candidate only - chỉ khi status = submitted)
+PUT http://localhost:5001/applications/APPLICATION_UUID_HERE
+Authorization: Bearer YOUR_CANDIDATE_TOKEN
+Content-Type: application/json
+
+{
+  "cvId": "NEW_CV_UUID_HERE",
+  "cvType": "template",
+  "coverLetter": "Updated cover letter"
+}
+
+### 6. Withdraw Application (Candidate only - chỉ khi status = submitted)
+POST http://localhost:5001/applications/APPLICATION_UUID_HERE/withdraw
+Authorization: Bearer YOUR_CANDIDATE_TOKEN
+
+### 7. List My Applications (Candidate)
+GET http://localhost:5001/applications/my-applications?page=1&limit=10
+Authorization: Bearer YOUR_CANDIDATE_TOKEN
+
+### 8. List My Applications with filters
+GET http://localhost:5001/applications/my-applications?status=submitted&page=1&limit=10
+Authorization: Bearer YOUR_CANDIDATE_TOKEN
+
+### 9. List Job Applications (Employer only)
+# Thay YOUR_EMPLOYER_TOKEN bằng token từ login employer
+GET http://localhost:5001/applications/jobs/JOB_UUID_HERE/applications?page=1&limit=10
+Authorization: Bearer YOUR_EMPLOYER_TOKEN
+
+### 10. List Job Applications with filters
+GET http://localhost:5001/applications/jobs/JOB_UUID_HERE/applications?status=submitted&page=1&limit=10
+Authorization: Bearer YOUR_EMPLOYER_TOKEN
+
+### 11. Update Application Status (Employer only)
+PUT http://localhost:5001/applications/APPLICATION_UUID_HERE/status
+Authorization: Bearer YOUR_EMPLOYER_TOKEN
+Content-Type: application/json
+
+{
+  "status": "reviewing"
+}
+
+### 12. Update Application Status to Interview
+PUT http://localhost:5001/applications/APPLICATION_UUID_HERE/status
+Authorization: Bearer YOUR_EMPLOYER_TOKEN
+Content-Type: application/json
+
+{
+  "status": "interview"
+}
+
+### 13. Update Application Status to Accepted
+PUT http://localhost:5001/applications/APPLICATION_UUID_HERE/status
+Authorization: Bearer YOUR_EMPLOYER_TOKEN
+Content-Type: application/json
+
+{
+  "status": "accepted"
+}
+
+### 14. Update Application Status to Rejected
+PUT http://localhost:5001/applications/APPLICATION_UUID_HERE/status
+Authorization: Bearer YOUR_EMPLOYER_TOKEN
+Content-Type: application/json
+
+{
+  "status": "rejected"
+}
+
+### Test Error Cases
+
+### 15. Try to create duplicate application (should fail)
+POST http://localhost:5001/applications
+Authorization: Bearer YOUR_CANDIDATE_TOKEN
+Content-Type: application/json
+
+{
+  "jobId": "SAME_JOB_UUID",
+  "cvId": "SAME_CV_UUID",
+  "cvType": "uploaded",
+  "coverLetter": "Duplicate application"
+}
+
+### 16. Try to update withdrawn application (should fail)
+PUT http://localhost:5001/applications/WITHDRAWN_APPLICATION_UUID/status
+Authorization: Bearer YOUR_EMPLOYER_TOKEN
+Content-Type: application/json
+
+{
+  "status": "reviewing"
+}
+
+### 17. Try to apply to expired job (should fail)
+POST http://localhost:5001/applications
+Authorization: Bearer YOUR_CANDIDATE_TOKEN
+Content-Type: application/json
+
+{
+  "jobId": "EXPIRED_JOB_UUID",
+  "cvId": "CV_UUID_HERE",
+  "cvType": "uploaded"
+}

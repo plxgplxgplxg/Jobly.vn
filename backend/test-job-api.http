@@ -1,0 +1,52 @@
+### Test Job API
+
+@baseUrl = http://localhost:5001
+@employerToken = YOUR_EMPLOYER_JWT_TOKEN
+@companyId = YOUR_COMPANY_ID
+
+### 1. Create Job (Employer only)
+POST {{baseUrl}}/jobs
+Authorization: Bearer {{employerToken}}
+Content-Type: application/json
+
+{
+  "title": "Backend Developer",
+  "description": "Chúng tôi đang tìm kiếm Backend Developer có kinh nghiệm với Node.js và PostgreSQL",
+  "requirements": "- 2+ năm kinh nghiệm Node.js\n- Thành thạo PostgreSQL\n- Biết TypeScript là lợi thế",
+  "salary": "15-20 triệu",
+  "location": "Hà Nội",
+  "deadline": "2026-12-31",
+  "companyId": "{{companyId}}"
+}
+
+### 2. Get Job by ID (Public)
+GET {{baseUrl}}/jobs/JOB_ID_HERE
+
+### 3. List Jobs (Public)
+GET {{baseUrl}}/jobs?page=1&limit=10
+
+### 4. Search Jobs (Public)
+GET {{baseUrl}}/jobs/search?keyword=developer&location=Hà Nội&vipOnly=false&page=1&limit=10
+
+### 5. Search VIP Jobs only
+GET {{baseUrl}}/jobs/search?vipOnly=true&page=1&limit=10
+
+### 6. Update Job (Employer only)
+PUT {{baseUrl}}/jobs/JOB_ID_HERE
+Authorization: Bearer {{employerToken}}
+Content-Type: application/json
+
+{
+  "title": "Senior Backend Developer",
+  "salary": "20-25 triệu"
+}
+
+### 7. Delete Job (Employer only)
+DELETE {{baseUrl}}/jobs/JOB_ID_HERE
+Authorization: Bearer {{employerToken}}
+
+### 8. List Jobs by Company
+GET {{baseUrl}}/jobs?companyId={{companyId}}&page=1&limit=10
+
+### 9. List Jobs by Status
+GET {{baseUrl}}/jobs?status=approved&page=1&limit=10

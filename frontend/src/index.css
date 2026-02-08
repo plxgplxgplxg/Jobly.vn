@@ -1,0 +1,63 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    font-family: 'Manrope', system-ui, Avenir, Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background-color: #f7f6f8;
+    color: #0f172a;
+  }
+
+  body.dark {
+    background-color: #191022;
+    color: #f1f5f9;
+  }
+
+  /* Material Symbols config */
+  .material-symbols-outlined {
+    font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  }
+}
+
+@layer utilities {
+
+  /* Custom background colors */
+  .bg-background-light {
+    background-color: #f7f6f8;
+  }
+
+  .bg-background-dark {
+    background-color: #191022;
+  }
+
+  /* Animation cho toast */
+  @keyframes slide-in-right {
+    from {
+      transform: translateX(100%);
+      opacity: 0;
+    }
+
+    to {
+      transform: translateX(0);
+      opacity: 1;
+    }
+  }
+
+  .animate-slide-in-right {
+    animation: slide-in-right 0.3s ease-out;
+  }
+
+  /* Focus visible styles */
+  *:focus-visible {
+    outline: 2px solid #7f13ec;
+    outline-offset: 2px;
+  }
+}
