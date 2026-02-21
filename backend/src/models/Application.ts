@@ -13,6 +13,10 @@ class Application extends Model {
   public cvId!: string;
   public cvType!: CVType;
   public coverLetter?: string;
+  public interviewDate?: string;
+  public interviewTime?: string;
+  public interviewLocation?: string;
+  public interviewNote?: string;
   public status!: ApplicationStatus;
   public appliedAt!: Date;
   public readonly createdAt!: Date;
@@ -58,6 +62,22 @@ Application.init(
       type: DataTypes.TEXT,
       field: 'cover_letter'
     },
+    interviewDate: {
+      type: DataTypes.DATEONLY,
+      field: 'interview_date'
+    },
+    interviewTime: {
+      type: DataTypes.TIME,
+      field: 'interview_time'
+    },
+    interviewLocation: {
+      type: DataTypes.STRING,
+      field: 'interview_location'
+    },
+    interviewNote: {
+      type: DataTypes.TEXT,
+      field: 'interview_note'
+    },
     status: {
       type: DataTypes.ENUM('submitted', 'reviewing', 'interview', 'accepted', 'rejected', 'withdrawn'),
       defaultValue: 'submitted'
@@ -76,8 +96,8 @@ Application.init(
       { fields: ['candidate_id'] },
       { fields: ['job_id'] },
       { fields: ['status'] },
-      { 
-        unique: true, 
+      {
+        unique: true,
         fields: ['candidate_id', 'job_id', 'cv_id'],
         name: 'unique_application'
       }

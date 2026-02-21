@@ -7,16 +7,31 @@ import { UserProfileDTO, UpdateProfileDTO, CVDTO, CompanyDTO } from '../types/us
 import path from 'path';
 import fs from 'fs';
 
+import SavedJobService from './SavedJobService';
+import SavedCandidateService from './SavedCandidateService';
+
 class UserService {
   // Dashboard stats
   async getDashboardStats(userId: string) {
+    const user = await UserRepository.findById(userId);
+    if (!user) {
+      throw new Error('Người dùng không tồn tại');
+    }
+
     const applicationsCount = await ApplicationRepository.countByUserId(userId);
     const cvsCount = await UploadedCVRepository.countByUserId(userId);
     const messagesCount = await MessageRepository.countUnreadByUserId(userId);
 
+    let savedCount = 0;
+    if (user.role === 'candidate') {
+      savedCount = await SavedJobService.count(userId);
+    } else if (user.role === 'employer') {
+      savedCount = await SavedCandidateService.count(userId);
+    }
+
     return {
       applications: applicationsCount,
-      savedJobs: 0, // TODO: Implement saved jobs
+      savedJobs: savedCount, // This will store savedProfiles for employers too, frontend should handle label
       cvs: cvsCount,
       messages: messagesCount
     };
@@ -27,6 +42,9 @@ class UserService {
     if (!user) {
       throw new Error('Người dùng không tồn tại');
     }
+
+    const userData = user.toJSON() as any;
+    const company = userData.companies && userData.companies.length > 0 ? userData.companies[0] : undefined;
 
     return {
       id: user.id,
@@ -52,7 +70,18 @@ class UserService {
       willingToRelocate: user.willingToRelocate,
       profileCompleted: user.profileCompleted,
       createdAt: user.createdAt,
-      updatedAt: user.updatedAt
+      updatedAt: user.updatedAt,
+      company: company ? {
+        id: company.id,
+        name: company.name,
+        taxCode: company.taxCode,
+        industry: company.industry,
+        logoUrl: company.logoUrl,
+        description: company.description,
+        userId: company.userId,
+        createdAt: company.createdAt,
+        updatedAt: company.updatedAt
+      } : undefined
     };
   }
 
@@ -364,9 +393,9 @@ class UserService {
     return logoUrl;
   }
 
-  async searchCandidates(query: string): Promise<UserProfileDTO[]> {
-    const users = await UserRepository.searchCandidates(query);
-    return users.map(user => ({
+  async searchCandidates(query: string, page = 1, limit = 9) {
+    const { rows, count } = await UserRepository.searchCandidates(query, page, limit);
+    const items = rows.map(user => ({
       id: user.id,
       name: user.name,
       email: user.email,
@@ -392,6 +421,13 @@ class UserService {
       createdAt: user.createdAt,
       updatedAt: user.updatedAt
     }));
+    return {
+      items,
+      total: count,
+      page,
+      limit,
+      totalPages: Math.ceil(count / limit)
+    }
   }
 }
 

@@ -1,6 +1,22 @@
-import type { Company } from './user.types'
-
 // Job types
+export interface Company {
+  id: string
+  name: string
+  taxCode: string
+  industry: string
+  logoUrl?: string
+  website?: string
+  address: string
+  description: string
+  size?: string
+  userId: string
+  createdAt: string
+  updatedAt: string
+}
+
+export interface CompanyWithJobs extends Company {
+  jobs: Job[]
+}
 export const JobType = {
   FULL_TIME: 'full_time',
   PART_TIME: 'part_time',
@@ -25,11 +41,7 @@ export interface Job {
   description: string
   requirements: string
   benefits?: string
-  salary: string | {
-    min: number
-    max: number
-    currency: string
-  }
+  salary: string | any
   location: string
   type?: JobType
   status: JobStatus
@@ -40,6 +52,7 @@ export interface Job {
   createdAt: string
   updatedAt: string
   expiresAt: string
+  deadline?: string
 }
 
 export interface SearchQuery {
@@ -59,3 +72,25 @@ export interface PaginatedResponse<T> {
   limit: number
   totalPages: number
 }
+
+export interface CompaniesResponse {
+  companies: Company[]
+  pagination: {
+    total: number
+    page: number
+    limit: number
+    totalPages: number
+  }
+}
+
+export interface CompanyJobsResponse {
+  company: Company
+  jobs: Job[]
+  pagination: {
+    total: number
+    page: number
+    limit: number
+    totalPages: number
+  }
+}
+

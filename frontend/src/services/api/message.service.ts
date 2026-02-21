@@ -2,7 +2,7 @@ import { apiClient } from './apiClient'
 import type { Conversation, Message } from '../../store/messageStore'
 
 export interface SendMessageData {
-  conversationId: string
+  receiverId: string
   content: string
 }
 
@@ -30,7 +30,7 @@ class MessageService {
   }
 
   async markAsRead(conversationId: string): Promise<void> {
-    await apiClient.patch(`/messages/conversations/${conversationId}/read`)
+    await apiClient.post(`/messages/conversations/${conversationId}/mark-read`)
   }
 
   async createConversation(data: CreateConversationData): Promise<Conversation> {

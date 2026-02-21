@@ -17,6 +17,7 @@ class Job extends Model {
   public vipFlag!: boolean;
   public vipExpiresAt?: Date;
   public companyId!: string;
+  public company?: any; // Avoid circular dependency import for now
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
 }

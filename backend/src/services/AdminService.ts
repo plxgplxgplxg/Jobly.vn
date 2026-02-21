@@ -145,6 +145,33 @@ class AdminService {
     };
   }
 
+  async rejectUser(userId: string, adminId: string, reason: string): Promise<UserProfileDTO> {
+    const user = await User.findByPk(userId);
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    user.status = 'deleted';
+    await user.save();
+
+    await this.logAdminAction(adminId, 'REJECT_USER', 'user', userId, { reason });
+
+    return {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      phone: user.phone,
+      role: user.role,
+      status: user.status,
+      address: user.address,
+      dateOfBirth: user.dateOfBirth,
+      experience: user.experience,
+      avatarUrl: user.avatarUrl,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt
+    };
+  }
+
   async sendWarning(userId: string, message: string, adminId: string): Promise<void> {
     const user = await User.findByPk(userId);
     if (!user) {
@@ -474,10 +501,17 @@ class AdminService {
     dateTo: Date,
     additionalWhere: any = {}
   ): Promise<any[]> {
+    const columnMap: Record<string, string> = {
+      createdAt: 'created_at',
+      updatedAt: 'updated_at',
+      appliedAt: 'applied_at',
+    };
+    const dbColumn = columnMap[dateField] || dateField;
+
     const data = await model.findAll({
       attributes: [
-        [model.sequelize.fn('DATE', model.sequelize.col(dateField)), 'date'],
-        [model.sequelize.fn('COUNT', '*'), 'value']
+        [model.sequelize.fn('DATE', model.sequelize.col(dbColumn)), 'date'],
+        [model.sequelize.fn('COUNT', model.sequelize.col('id')), 'value']
       ],
       where: {
         [dateField]: {
@@ -485,8 +519,8 @@ class AdminService {
         },
         ...additionalWhere
       },
-      group: [model.sequelize.fn('DATE', model.sequelize.col(dateField))],
-      order: [[model.sequelize.fn('DATE', model.sequelize.col(dateField)), 'ASC']],
+      group: [model.sequelize.fn('DATE', model.sequelize.col(dbColumn))],
+      order: [[model.sequelize.fn('DATE', model.sequelize.col(dbColumn)), 'ASC']],
       raw: true
     });
 

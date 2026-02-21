@@ -9,6 +9,9 @@ import ApplicationStatusHistory from './ApplicationStatusHistory';
 import Conversation from './Conversation';
 import Message from './Message';
 import AdminLog from './AdminLog';
+import Notification from './Notification';
+import SavedJob from './SavedJob';
+import SavedCandidate from './SavedCandidate';
 
 // User - Company
 User.hasMany(Company, { foreignKey: 'userId', as: 'companies' });
@@ -62,4 +65,20 @@ Message.belongsTo(User, { foreignKey: 'receiverId', as: 'receiver' });
 User.hasMany(AdminLog, { foreignKey: 'adminId', as: 'adminLogs' });
 AdminLog.belongsTo(User, { foreignKey: 'adminId', as: 'admin' });
 
-export { User, Company, Job, UploadedCV, CVTemplate, UserCV, Application, ApplicationStatusHistory, Conversation, Message, AdminLog };
+// Notification
+User.hasMany(Notification, { foreignKey: 'userId', as: 'notifications' });
+Notification.belongsTo(User, { foreignKey: 'userId', as: 'user' });
+
+// SavedJob
+User.hasMany(SavedJob, { foreignKey: 'userId', as: 'savedJobs' });
+SavedJob.belongsTo(User, { foreignKey: 'userId', as: 'user' });
+Job.hasMany(SavedJob, { foreignKey: 'jobId', as: 'saves' });
+SavedJob.belongsTo(Job, { foreignKey: 'jobId', as: 'job' });
+
+// SavedCandidate
+User.hasMany(SavedCandidate, { foreignKey: 'employerId', as: 'savedCandidates' });
+SavedCandidate.belongsTo(User, { foreignKey: 'employerId', as: 'employer' });
+User.hasMany(SavedCandidate, { foreignKey: 'candidateId', as: 'savedBy' });
+SavedCandidate.belongsTo(User, { foreignKey: 'candidateId', as: 'candidate' });
+
+export { User, Company, Job, UploadedCV, CVTemplate, UserCV, Application, ApplicationStatusHistory, Conversation, Message, AdminLog, Notification, SavedJob, SavedCandidate };

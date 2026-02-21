@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { useAuthStore } from './authStore'
 
 export interface Message {
   id: string
@@ -11,7 +12,7 @@ export interface Message {
   }
   content: string
   isRead: boolean
-  createdAt: string
+  sentAt: string
 }
 
 export interface Conversation {
@@ -107,9 +108,15 @@ export const useMessageStore = create<MessageState>((set, get) => ({
     // Update conversation với last message
     const conversation = get().conversations.find(c => c.id === conversationId)
     if (conversation) {
+      // Lấy current user ID từ authStore
+      const currentUserId = useAuthStore.getState().user?.id
+
+      // Chỉ tăng unreadCount nếu tin nhắn từ người khác
+      const shouldIncreaseUnread = message.senderId !== currentUserId
+
       get().updateConversation(conversationId, {
         lastMessage: message,
-        unreadCount: message.senderId !== get().activeConversationId
+        unreadCount: shouldIncreaseUnread
           ? conversation.unreadCount + 1
           : conversation.unreadCount
       })

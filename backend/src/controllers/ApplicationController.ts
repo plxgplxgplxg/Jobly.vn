@@ -55,7 +55,7 @@ class ApplicationController {
   async listMyApplications(req: Request, res: Response): Promise<void> {
     try {
       const candidateId = (req as any).user.userId;
-      
+
       const filters: ApplicationFilterDTO = {
         status: req.query.status as ApplicationStatus,
         dateFrom: req.query.dateFrom ? new Date(req.query.dateFrom as string) : undefined,
@@ -75,7 +75,7 @@ class ApplicationController {
     try {
       const employerId = (req as any).user.userId;
       const jobId = req.params.jobId as string;
-      
+
       const filters: ApplicationFilterDTO = {
         status: req.query.status as ApplicationStatus,
         dateFrom: req.query.dateFrom ? new Date(req.query.dateFrom as string) : undefined,
@@ -91,18 +91,55 @@ class ApplicationController {
     }
   }
 
+  async listAllEmployerApplications(req: Request, res: Response): Promise<void> {
+    try {
+      const employerId = (req as any).user.userId;
+
+      const filters: ApplicationFilterDTO = {
+        status: req.query.status as ApplicationStatus,
+        dateFrom: req.query.dateFrom ? new Date(req.query.dateFrom as string) : undefined,
+        dateTo: req.query.dateTo ? new Date(req.query.dateTo as string) : undefined,
+        page: parseInt(req.query.page as string) || 1,
+        limit: parseInt(req.query.limit as string) || 10
+      };
+
+      const result = await ApplicationService.listAllEmployerApplications(employerId, filters);
+      res.json(result);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  }
+
   async updateApplicationStatus(req: Request, res: Response): Promise<void> {
     try {
       const employerId = (req as any).user.userId;
       const applicationId = req.params.applicationId as string;
-      const { status } = req.body;
+      const { status, interviewDate, interviewTime, interviewLocation, interviewNote } = req.body;
 
       if (!status) {
         res.status(400).json({ error: 'Status là bắt buộc' });
         return;
       }
 
-      const application = await ApplicationService.updateApplicationStatus(applicationId, employerId, status);
+      const application = await ApplicationService.updateApplicationStatus(applicationId, employerId, status, {
+        interviewDate, interviewTime, interviewLocation, interviewNote
+      });
+      res.json(application);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  }
+
+  async getMyApplicationForJob(req: Request, res: Response): Promise<void> {
+    try {
+      const candidateId = (req as any).user.userId;
+      const jobId = req.params.jobId as string;
+
+      const application = await ApplicationService.getMyApplicationForJob(candidateId, jobId);
+      if (!application) {
+        res.status(404).json({ message: 'Application not found' });
+        return;
+      }
       res.json(application);
     } catch (error: any) {
       res.status(400).json({ error: error.message });

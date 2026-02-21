@@ -4,10 +4,10 @@ import UploadedCVRepository from '../repositories/UploadedCVRepository';
 import UserCVRepository from '../repositories/UserCVRepository';
 import { CreateApplicationDTO, UpdateApplicationDTO, ApplicationFilterDTO, PaginatedResult, ApplicationDTO, StatusHistoryItem } from '../types/application.types';
 import { ApplicationStatus } from '../models/Application';
+import NotificationService from './NotificationService';
 
 class ApplicationService {
   async createApplication(candidateId: string, data: CreateApplicationDTO): Promise<ApplicationDTO> {
-    // Validate job exists và active
     const job = await JobRepository.findById(data.jobId);
     if (!job) {
       throw new Error('Tin tuyển dụng không tồn tại');
@@ -17,27 +17,37 @@ class ApplicationService {
       throw new Error('Tin tuyển dụng chưa được duyệt hoặc đã hết hạn');
     }
 
-    // Check job not expired
     if (new Date(job.deadline) < new Date()) {
       throw new Error('Tin tuyển dụng đã hết hạn nộp hồ sơ');
     }
 
-    // Validate CV exists
     await this.validateCV(candidateId, data.cvId, data.cvType);
 
-    // Check duplicate application
     const duplicate = await ApplicationRepository.findDuplicate(candidateId, data.jobId, data.cvId);
     if (duplicate) {
       throw new Error('Bạn đã ứng tuyển vào công việc này với CV này rồi');
     }
 
-    // Tạo application
     const application = await ApplicationRepository.create(candidateId, data);
-
-    // Lưu lịch sử status ban đầu
     await ApplicationRepository.updateStatus(application.id, 'submitted', candidateId);
 
-    // TODO: Gửi notification cho Employer
+    // Notify Employer
+    try {
+      const CompanyRepository = require('../repositories/CompanyRepository').default;
+      const company = await CompanyRepository.findById(job.companyId);
+      if (company && company.userId) {
+        await NotificationService.create({
+          userId: company.userId,
+          title: 'Ứng viên mới',
+          message: `Có ứng viên mới ứng tuyển vào vị trí ${job.title}`,
+          type: 'application',
+          link: `/employer/applications?jobId=${job.id}`,
+          relatedId: application.id
+        });
+      }
+    } catch (error) {
+      console.error('Failed to notify employer', error);
+    }
 
     return await this.getApplication(application.id);
   }
@@ -48,17 +58,15 @@ class ApplicationService {
       throw new Error('Đơn ứng tuyển không tồn tại');
     }
 
-    // Verify ownership
     if (application.candidateId !== candidateId) {
       throw new Error('Bạn không có quyền cập nhật đơn ứng tuyển này');
     }
 
-    // Chỉ cho phép update khi status = submitted
-    if (application.status !== 'submitted') {
-      throw new Error('Chỉ có thể cập nhật đơn ứng tuyển ở trạng thái "Đã nộp"');
+    // Allow update regardless of status (except maybe withdrawn?)
+    if (application.status === 'withdrawn') {
+      throw new Error('Đơn ứng tuyển đã thu hồi, vui lòng tạo đơn mới');
     }
 
-    // Validate CV nếu có thay đổi
     if (data.cvId && data.cvType) {
       await this.validateCV(candidateId, data.cvId, data.cvType);
     }
@@ -67,6 +75,9 @@ class ApplicationService {
     if (!updatedApplication) {
       throw new Error('Cập nhật thất bại');
     }
+
+    // Reset status to submitted => "Re-apply" logic
+    await ApplicationRepository.updateStatus(applicationId, 'submitted', candidateId);
 
     return await this.getApplication(applicationId);
   }
@@ -77,19 +88,15 @@ class ApplicationService {
       throw new Error('Đơn ứng tuyển không tồn tại');
     }
 
-    // Verify ownership
     if (application.candidateId !== candidateId) {
       throw new Error('Bạn không có quyền thu hồi đơn ứng tuyển này');
     }
 
-    // Chỉ cho phép withdraw khi status = submitted
     if (application.status !== 'submitted') {
       throw new Error('Chỉ có thể thu hồi đơn ứng tuyển ở trạng thái "Đã nộp"');
     }
 
     await ApplicationRepository.updateStatus(applicationId, 'withdrawn', candidateId);
-
-    // TODO: Gửi notification cho Employer
 
     return await this.getApplication(applicationId);
   }
@@ -117,13 +124,11 @@ class ApplicationService {
   }
 
   async listJobApplications(jobId: string, employerId: string, filters: ApplicationFilterDTO): Promise<PaginatedResult<ApplicationDTO>> {
-    // Verify job thuộc về employer
     const job = await JobRepository.findById(jobId);
     if (!job) {
       throw new Error('Tin tuyển dụng không tồn tại');
     }
 
-    // Check ownership thông qua company - cần load company từ job
     const companyId = job.companyId;
     const CompanyRepository = require('../repositories/CompanyRepository').default;
     const company = await CompanyRepository.findById(companyId);
@@ -144,31 +149,92 @@ class ApplicationService {
     };
   }
 
-  async updateApplicationStatus(applicationId: string, employerId: string, status: ApplicationStatus): Promise<ApplicationDTO> {
+  async listAllEmployerApplications(employerId: string, filters: ApplicationFilterDTO): Promise<PaginatedResult<ApplicationDTO>> {
+    const CompanyRepository = require('../repositories/CompanyRepository').default;
+    const companies = await CompanyRepository.findByUserId(employerId);
+
+    if (!companies || companies.length === 0) {
+      throw new Error('Không tìm thấy công ty của bạn');
+    }
+
+    const company = companies[0];
+    const jobs = await JobRepository.listByCompanyIds([company.id], { page: 1, limit: 1000 });
+    const jobIds = jobs.items.map((job: any) => job.id);
+
+    if (jobIds.length === 0) {
+      return {
+        items: [],
+        total: 0,
+        page: filters.page || 1,
+        limit: filters.limit || 10,
+        totalPages: 0
+      };
+    }
+
+    const result = await ApplicationRepository.listByJobIds(jobIds, filters);
+
+    const items = await Promise.all(
+      result.items.map(app => this.toDTO(app))
+    );
+
+    return {
+      ...result,
+      items
+    };
+  }
+
+  async updateApplicationStatus(applicationId: string, employerId: string, status: ApplicationStatus, data?: any): Promise<ApplicationDTO> {
     const application = await ApplicationRepository.findById(applicationId);
     if (!application) {
       throw new Error('Đơn ứng tuyển không tồn tại');
     }
 
-    // Verify job thuộc về employer - cần load job và company
-    const job = await JobRepository.findById(application.jobId);
-    if (!job) {
-      throw new Error('Tin tuyển dụng không tồn tại');
-    }
-
+    // Verify job belongs to employer
     const CompanyRepository = require('../repositories/CompanyRepository').default;
-    const company = await CompanyRepository.findById(job.companyId);
+    const companies = await CompanyRepository.findByUserId(employerId);
+    if (!companies || companies.length === 0) {
+      throw new Error('Không tìm thấy công ty của bạn');
+    }
+    const company = companies[0];
 
-    if (!company || company.userId !== employerId) {
-      throw new Error('Bạn không có quyền cập nhật trạng thái đơn ứng tuyển này');
+    const job = await JobRepository.findById(application.jobId);
+    if (!job || job.companyId !== company.id) {
+      throw new Error('Bạn không có quyền cập nhật đơn ứng tuyển này');
     }
 
-    // Validate status transition
     this.validateStatusTransition(application.status, status);
 
-    await ApplicationRepository.updateStatus(applicationId, status, employerId);
+    await ApplicationRepository.updateStatus(applicationId, status, employerId, data);
 
-    // TODO: Gửi notification cho Candidate
+    try {
+      let message = `Trạng thái đơn ứng tuyển vị trí ${job.title} đã được cập nhật.`;
+      let type: any = 'status_update';
+
+      if (status === 'interview') {
+        type = 'interview';
+        message = `Nhà tuyển dụng đã hẹn phỏng vấn bạn cho vị trí ${job.title}. Vui lòng kiểm tra chi tiết.`;
+      } else if (status === 'rejected') {
+        type = 'error';
+        message = `Rất tiếc, hồ sơ ứng tuyển vị trí ${job.title} của bạn chưa phù hợp.`;
+      } else if (status === 'accepted') {
+        type = 'success';
+        message = `Chúc mừng! Bạn đã được nhận vào vị trí ${job.title}.`;
+      } else if (status === 'reviewing') {
+        type = 'info';
+        message = `Hồ sơ cho vị trí ${job.title} của bạn đã được nhà tuyển dụng xem.`;
+      }
+
+      await NotificationService.create({
+        userId: application.candidateId,
+        title: 'Cập nhật trạng thái ứng tuyển',
+        message,
+        type,
+        link: `/candidate/applications`,
+        relatedId: applicationId
+      });
+    } catch (error) {
+      console.error('Failed to send notification', error);
+    }
 
     return await this.getApplication(applicationId);
   }
@@ -196,24 +262,20 @@ class ApplicationService {
   }
 
   private validateStatusTransition(currentStatus: ApplicationStatus, newStatus: ApplicationStatus): void {
-    // Không cho phép chuyển từ withdrawn
     if (currentStatus === 'withdrawn') {
       throw new Error('Không thể thay đổi trạng thái đơn ứng tuyển đã thu hồi');
     }
 
-    // Không cho phép chuyển về submitted
     if (newStatus === 'submitted') {
       throw new Error('Không thể chuyển trạng thái về "Đã nộp"');
     }
 
-    // Không cho phép chuyển về withdrawn (chỉ candidate mới được withdraw)
     if (newStatus === 'withdrawn') {
       throw new Error('Không thể chuyển trạng thái thành "Đã thu hồi"');
     }
   }
 
   private async toDTO(application: any): Promise<ApplicationDTO> {
-    // Lấy CV Info
     let cvUrl = '';
     let cvName = '';
 
@@ -223,12 +285,10 @@ class ApplicationService {
       cvName = cv?.fileName || 'Uploaded CV';
     } else if (application.cvType === 'template') {
       const cv = await UserCVRepository.findById(application.cvId);
-      // Giả sử UserCV có field pdfUrl và title
       cvUrl = (cv as any)?.pdfUrl || '';
       cvName = (cv as any)?.title || 'Jobly CV';
     }
 
-    // Lấy status history
     const statusHistory = await ApplicationRepository.getStatusHistory(application.id);
 
     return {
@@ -266,7 +326,8 @@ class ApplicationService {
           taxCode: application.job.company.taxCode,
           industry: application.job.company.industry,
           logo: application.job.company.logoUrl,
-          description: application.job.company.description
+          description: application.job.company.description,
+          userId: application.job.company.userId
         } : undefined,
         createdAt: application.job.createdAt,
         updatedAt: application.job.updatedAt
@@ -277,6 +338,10 @@ class ApplicationService {
       cvUrl,
       coverLetter: application.coverLetter,
       status: application.status,
+      interviewDate: application.interviewDate,
+      interviewTime: application.interviewTime,
+      interviewLocation: application.interviewLocation,
+      interviewNote: application.interviewNote,
       createdAt: application.appliedAt,
       updatedAt: application.updatedAt,
       statusHistory: statusHistory.map((h: any) => ({
@@ -285,6 +350,12 @@ class ApplicationService {
         changedBy: h.changedBy
       }))
     };
+  }
+
+  async getMyApplicationForJob(candidateId: string, jobId: string): Promise<any> {
+    const application = await ApplicationRepository.findByCandidateAndJob(candidateId, jobId);
+    if (!application) return null;
+    return this.toDTO(application);
   }
 }
 

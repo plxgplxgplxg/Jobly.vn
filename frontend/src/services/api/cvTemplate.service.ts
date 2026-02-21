@@ -13,8 +13,10 @@ export interface CVTemplate {
   name: string
   description: string
   previewImageUrl: string
+  thumbnail?: string
   htmlTemplate: string
   cssStyles: string
+  cssTemplate?: string
   fields: CVField[]
   createdAt: string
   updatedAt: string

@@ -4,6 +4,7 @@ import { Button } from '../components/common/Button'
 import { companyService, type Company } from '../services/api/company.service'
 import { jobService } from '../services/api/job.service'
 import type { Job } from '../types/job.types'
+import { API_BASE_URL } from '../constants/api'
 
 export function HomePage() {
   const [topCompanies, setTopCompanies] = useState<Company[]>([])
@@ -185,7 +186,7 @@ export function HomePage() {
                   <div className="aspect-square flex items-center justify-center">
                     {company.logoUrl ? (
                       <img
-                        src={company.logoUrl}
+                        src={company.logoUrl.startsWith('http') ? company.logoUrl : `${API_BASE_URL}${company.logoUrl}`}
                         alt={company.name}
                         className="w-full h-full object-contain grayscale group-hover:grayscale-0 transition-all"
                       />
@@ -236,15 +237,23 @@ export function HomePage() {
               {latestJobs.map((job) => (
                 <div key={job.id} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6 hover:border-primary/50 hover:shadow-xl transition-all">
                   <div className="flex items-start gap-4 mb-4">
-                    <div className="size-14 shrink-0 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
-                      <span className="material-symbols-outlined text-slate-400 text-2xl">business</span>
+                    <div className="size-14 shrink-0 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center overflow-hidden">
+                      {job.company?.logoUrl ? (
+                        <img
+                          src={job.company.logoUrl.startsWith('http') ? job.company.logoUrl : `${API_BASE_URL}${job.company.logoUrl}`}
+                          alt={job.company.name}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <span className="material-symbols-outlined text-slate-400 text-2xl">business</span>
+                      )}
                     </div>
                     <div className="flex-1 min-w-0">
                       <h3 className="font-bold text-lg text-slate-900 dark:text-slate-100 mb-1 hover:text-primary transition-colors line-clamp-1">
                         {job.title}
                       </h3>
                       <p className="text-sm text-slate-600 dark:text-slate-400">
-                        {(job as any).company?.name || 'Công ty'}
+                        {job.company?.name || 'Công ty'}
                       </p>
                     </div>
                   </div>

@@ -144,7 +144,7 @@ export function CompanyDetailPage() {
                                         </div>
                                         <div className="flex items-center gap-1">
                                             <span className="material-symbols-outlined text-sm">schedule</span>
-                                            <span>Hạn: {new Date(job.deadline).toLocaleDateString('vi-VN')}</span>
+                                            <span>Hạn: {job.deadline ? new Date(job.deadline).toLocaleDateString('vi-VN') : 'Chưa cập nhật'}</span>
                                         </div>
                                     </div>
 

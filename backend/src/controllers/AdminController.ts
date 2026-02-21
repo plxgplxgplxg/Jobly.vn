@@ -47,6 +47,19 @@ class AdminController {
     }
   }
 
+  async rejectUser(req: AuthRequest, res: Response): Promise<void> {
+    try {
+      const userId = req.params.userId as string;
+      const { reason } = req.body;
+      const adminId = req.user!.userId;
+
+      const user = await AdminService.rejectUser(userId, adminId, reason);
+      res.json(user);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  }
+
   async sendWarning(req: AuthRequest, res: Response): Promise<void> {
     try {
       const userId = req.params.userId as string;
@@ -165,8 +178,12 @@ class AdminController {
   // Báo cáo thống kê
   async getStatistics(req: AuthRequest, res: Response): Promise<void> {
     try {
-      const dateFrom = new Date(req.query.dateFrom as string);
-      const dateTo = new Date(req.query.dateTo as string);
+      let dateFrom = req.query.dateFrom ? new Date(req.query.dateFrom as string) : new Date();
+      let dateTo = req.query.dateTo ? new Date(req.query.dateTo as string) : new Date();
+
+      if (!req.query.dateFrom) {
+        dateFrom.setDate(dateFrom.getDate() - 30);
+      }
 
       const stats = await AdminService.getStatistics(dateFrom, dateTo);
       res.json(stats);

@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 
-import type { User } from '../types/user.types'
+import type { UserProfile as User } from '../types/user.types'
 import { UserRole } from '../types/user.types'
 
 export type { User }

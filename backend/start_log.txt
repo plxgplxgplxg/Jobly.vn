@@ -1,0 +1,102 @@
+
+> backend@1.0.0 dev
+> nodemon --exec ts-node src/index.ts
+
+[33m[nodemon] 3.1.11[39m
+[33m[nodemon] to restart at any time, enter `rs`[39m
+[33m[nodemon] watching path(s): *.*[39m
+[33m[nodemon] watching extensions: ts,json[39m
+[32m[nodemon] starting `ts-node src/index.ts`[39m
+[dotenv@17.2.3] injecting env (8) from .env -- tip: 🔐 encrypt with Dotenvx: https://dotenvx.com
+/Users/plxg/workspace/Jobly.vn/backend/node_modules/ts-node/src/index.ts:859
+    return new TSError(diagnosticText, diagnosticCodes, diagnostics);
+           ^
+TSError: ⨯ Unable to compile TypeScript:
+src/controllers/NotificationController.ts(22,50): error TS2345: Argument of type 'string | string[]' is not assignable to parameter of type 'string'.
+  Type 'string[]' is not assignable to type 'string'.
+
+    at createTSError (/Users/plxg/workspace/Jobly.vn/backend/node_modules/ts-node/src/index.ts:859:12)
+    at reportTSError (/Users/plxg/workspace/Jobly.vn/backend/node_modules/ts-node/src/index.ts:863:19)
+    at getOutput (/Users/plxg/workspace/Jobly.vn/backend/node_modules/ts-node/src/index.ts:1077:36)
+    at Object.compile (/Users/plxg/workspace/Jobly.vn/backend/node_modules/ts-node/src/index.ts:1433:41)
+    at Module.m._compile (/Users/plxg/workspace/Jobly.vn/backend/node_modules/ts-node/src/index.ts:1617:30)
+    at node:internal/modules/cjs/loader:1706:10
+    at Object.require.extensions.<computed> [as .ts] (/Users/plxg/workspace/Jobly.vn/backend/node_modules/ts-node/src/index.ts:1621:12)
+    at Module.load (node:internal/modules/cjs/loader:1289:32)
+    at Function._load (node:internal/modules/cjs/loader:1108:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:220:24)
+    at Module.require (node:internal/modules/cjs/loader:1311:12)
+    at require (node:internal/modules/helpers:136:16)
+    at Object.<anonymous> (/Users/plxg/workspace/Jobly.vn/backend/src/routes/notification.routes.ts:2:1)
+    at Module._compile (node:internal/modules/cjs/loader:1554:14)
+    at Module.m._compile (/Users/plxg/workspace/Jobly.vn/backend/node_modules/ts-node/src/index.ts:1618:23) {
+  diagnosticCodes: [ 2345 ]
+}
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/index.ts`[39m
+[dotenv@17.2.3] injecting env (8) from .env -- tip: 🔐 prevent building .env in docker: https://dotenvx.com/prebuild
+/Users/plxg/workspace/Jobly.vn/backend/node_modules/ts-node/src/index.ts:859
+    return new TSError(diagnosticText, diagnosticCodes, diagnostics);
+           ^
+TSError: ⨯ Unable to compile TypeScript:
+src/controllers/SavedJobController.ts(30,70): error TS2345: Argument of type 'string | string[]' is not assignable to parameter of type 'string'.
+  Type 'string[]' is not assignable to type 'string'.
+
+    at createTSError (/Users/plxg/workspace/Jobly.vn/backend/node_modules/ts-node/src/index.ts:859:12)
+    at reportTSError (/Users/plxg/workspace/Jobly.vn/backend/node_modules/ts-node/src/index.ts:863:19)
+    at getOutput (/Users/plxg/workspace/Jobly.vn/backend/node_modules/ts-node/src/index.ts:1077:36)
+    at Object.compile (/Users/plxg/workspace/Jobly.vn/backend/node_modules/ts-node/src/index.ts:1433:41)
+    at Module.m._compile (/Users/plxg/workspace/Jobly.vn/backend/node_modules/ts-node/src/index.ts:1617:30)
+    at node:internal/modules/cjs/loader:1706:10
+    at Object.require.extensions.<computed> [as .ts] (/Users/plxg/workspace/Jobly.vn/backend/node_modules/ts-node/src/index.ts:1621:12)
+    at Module.load (node:internal/modules/cjs/loader:1289:32)
+    at Function._load (node:internal/modules/cjs/loader:1108:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:220:24)
+    at Module.require (node:internal/modules/cjs/loader:1311:12)
+    at require (node:internal/modules/helpers:136:16)
+    at Object.<anonymous> (/Users/plxg/workspace/Jobly.vn/backend/src/routes/saved-job.routes.ts:2:1)
+    at Module._compile (node:internal/modules/cjs/loader:1554:14)
+    at Module.m._compile (/Users/plxg/workspace/Jobly.vn/backend/node_modules/ts-node/src/index.ts:1618:23) {
+  diagnosticCodes: [ 2345 ]
+}
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/index.ts`[39m
+[dotenv@17.2.3] injecting env (8) from .env -- tip: 🔄 add secrets lifecycle management: https://dotenvx.com/ops
+[dotenv@17.2.3] injecting env (0) from .env -- tip: ⚙️  load multiple .env files with { path: ['.env.local', '.env'] }
+Database connection established successfully
+Database models synced
+Redis connected
+Cronjobs đã được thiết lập
+Error: listen EADDRINUSE: address already in use :::5001
+    at Server.setupListenHandle [as _listen2] (node:net:1937:16)
+    at listenInCluster (node:net:1994:12)
+    at Server.listen (node:net:2099:7)
+    at /Users/plxg/workspace/Jobly.vn/backend/src/index.ts:82:14
+    at processTicksAndRejections (node:internal/process/task_queues:105:5) {
+  code: 'EADDRINUSE',
+  errno: -48,
+  syscall: 'listen',
+  address: '::',
+  port: 5001
+}
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m
+node:events:496
+      throw er; // Unhandled 'error' event
+      ^
+
+Error: read EIO
+    at TTY.onStreamRead (node:internal/stream_base_commons:216:20)
+Emitted 'error' event on ReadStream instance at:
+    at emitErrorNT (node:internal/streams/destroy:170:8)
+    at emitErrorCloseNT (node:internal/streams/destroy:129:3)
+    at process.processTicksAndRejections (node:internal/process/task_queues:90:21) {
+  errno: -5,
+  code: 'EIO',
+  syscall: 'read'
+}
+
+Node.js v22.14.0

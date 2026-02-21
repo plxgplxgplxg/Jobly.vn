@@ -15,16 +15,21 @@ export interface AdminUser {
 
 export interface AdminStats {
   totalUsers: number
+  totalCandidates: number
+  totalEmployers: number
   totalJobs: number
   totalApplications: number
-  revenue: number
-  usersOverTime: Array<{
+  newUsersChart: Array<{
     date: string
-    count: number
+    value: number
   }>
-  jobsOverTime: Array<{
+  jobsChart: Array<{
     date: string
-    count: number
+    value: number
+  }>
+  applicationsChart: Array<{
+    date: string
+    value: number
   }>
 }
 
@@ -42,11 +47,17 @@ export interface UploadTemplateData {
   thumbnail?: string
 }
 
+export interface PaginatedResponse<T> {
+  items: T[]
+  total: number
+  page: number
+  limit: number
+  totalPages: number
+}
+
 class AdminService {
-  async getUsers(page = 1, limit = 20): Promise<{ data: AdminUser[]; total: number }> {
-    const response = await apiClient.get<{ data: AdminUser[]; total: number }>(
-      `/admin/users?page=${page}&limit=${limit}`
-    )
+  async getUsers(params?: { page?: number; limit?: number; role?: string; status?: string; keyword?: string }): Promise<PaginatedResponse<AdminUser>> {
+    const response = await apiClient.get<PaginatedResponse<AdminUser>>('/admin/users', { params })
     return response
   }
 
@@ -62,26 +73,34 @@ class AdminService {
     return response
   }
 
+  async rejectUser(id: string, reason: string): Promise<AdminUser> {
+    const response = await apiClient.post<AdminUser>(`/admin/users/${id}/reject`, { reason })
+    return response
+  }
+
   async deleteUser(id: string): Promise<void> {
     await apiClient.delete(`/admin/users/${id}`)
   }
 
-  async getPendingJobs(page = 1, limit = 20): Promise<{ data: Job[]; total: number }> {
-    const response = await apiClient.get<{ data: Job[]; total: number }>(
+  async getPendingJobs(page = 1, limit = 20): Promise<PaginatedResponse<Job>> {
+    const response = await apiClient.get<PaginatedResponse<Job>>(
       `/admin/jobs/pending?page=${page}&limit=${limit}`
     )
     return response
   }
 
-  async approveJob(id: string, status: 'approved' | 'rejected'): Promise<Job> {
-    const response = await apiClient.patch<Job>(`/admin/jobs/${id}/approve`, {
-      status
-    })
+  async approveJob(id: string): Promise<Job> {
+    const response = await apiClient.post<Job>(`/admin/jobs/${id}/approve`)
     return response
   }
 
-  async getTemplates(): Promise<CVTemplate[]> {
-    const response = await apiClient.get<CVTemplate[]>('/admin/cv-templates')
+  async rejectJob(id: string, reason: string): Promise<Job> {
+    const response = await apiClient.post<Job>(`/admin/jobs/${id}/reject`, { reason })
+    return response
+  }
+
+  async getTemplates(params?: { page?: number; limit?: number; category?: string }): Promise<PaginatedResponse<CVTemplate>> {
+    const response = await apiClient.get<PaginatedResponse<CVTemplate>>('/admin/cv-templates', { params })
     return response
   }
 
@@ -96,11 +115,11 @@ class AdminService {
 
   async getStats(startDate?: string, endDate?: string): Promise<AdminStats> {
     const params = new URLSearchParams()
-    if (startDate) params.append('startDate', startDate)
-    if (endDate) params.append('endDate', endDate)
+    if (startDate) params.append('dateFrom', startDate)
+    if (endDate) params.append('dateTo', endDate)
 
     const response = await apiClient.get<AdminStats>(
-      `/admin/stats?${params.toString()}`
+      `/admin/statistics?${params.toString()}`
     )
     return response
   }
@@ -111,8 +130,8 @@ class AdminService {
   }
 
   async searchUsers(query: string): Promise<AdminUser[]> {
-    const response = await apiClient.get<AdminUser[]>(`/admin/users/search?q=${query}`)
-    return response
+    const response = await apiClient.get<PaginatedResponse<AdminUser>>(`/admin/users?keyword=${query}`)
+    return response.items
   }
 }
 

@@ -3,6 +3,7 @@ import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom'
 import { useAuthStore, UserRole } from '../store/authStore'
 import { useUIStore } from '../store/uiStore'
 import { API_BASE_URL } from '../constants/api'
+import { FloatingChat } from '../components/features/messages/FloatingChat'
 
 export function DashboardLayout() {
   const navigate = useNavigate()
@@ -28,6 +29,7 @@ export function DashboardLayout() {
         { path: '/employer/jobs', icon: 'work', label: 'Quản lý tin tuyển dụng' },
         { path: '/employer/applications', icon: 'folder_shared', label: 'Hồ sơ ứng tuyển' },
         { path: '/employer/candidates', icon: 'search', label: 'Tìm kiếm ứng viên' },
+        { path: '/employer/saved-candidates', icon: 'bookmark', label: 'Ứng viên đã lưu' },
         { path: '/employer/messages', icon: 'chat_bubble', label: 'Tin nhắn' },
         { path: '/employer/profile', icon: 'business', label: 'Thông tin công ty' },
       ]
@@ -37,8 +39,6 @@ export function DashboardLayout() {
         { path: '/admin/dashboard', icon: 'dashboard', label: 'Bảng điều khiển' },
         { path: '/admin/users', icon: 'group', label: 'Quản lý users' },
         { path: '/admin/jobs', icon: 'business_center', label: 'Duyệt tin' },
-        { path: '/admin/templates', icon: 'description', label: 'CV Templates' },
-        { path: '/admin/alerts', icon: 'notifications', label: 'Thông báo' },
       ]
     } else {
       // Candidate
@@ -47,6 +47,7 @@ export function DashboardLayout() {
         { path: '/candidate/dashboard', icon: 'dashboard', label: 'Bảng điều khiển' },
         { path: '/candidate/jobs', icon: 'search', label: 'Tìm việc làm' },
         { path: '/candidate/applications', icon: 'description', label: 'Việc đã ứng tuyển' },
+        { path: '/candidate/saved-jobs', icon: 'bookmark', label: 'Công việc đã lưu' },
         { path: '/candidate/cv-management', icon: 'article', label: 'Quản lý CV' },
         { path: '/candidate/cv-builder', icon: 'edit_document', label: 'Tạo CV' },
         { path: '/candidate/messages', icon: 'chat_bubble', label: 'Tin nhắn' },
@@ -108,27 +109,7 @@ export function DashboardLayout() {
             )
           })}
 
-          {sidebarOpen && (
-            <>
-              <div className="pt-4 pb-2">
-                <p className="px-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Hỗ trợ</p>
-              </div>
-              <Link
-                to="/settings"
-                className="flex items-center gap-3 px-4 py-3 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 font-medium transition-colors"
-              >
-                <span className="material-symbols-outlined">settings</span>
-                <span>Cài đặt</span>
-              </Link>
-              <Link
-                to="/help"
-                className="flex items-center gap-3 px-4 py-3 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 font-medium transition-colors"
-              >
-                <span className="material-symbols-outlined">help</span>
-                <span>Trợ giúp</span>
-              </Link>
-            </>
-          )}
+
         </nav>
 
         {/* Sidebar Footer */}
@@ -222,7 +203,13 @@ export function DashboardLayout() {
                   </p>
                 </div>
                 <div className="size-10 rounded-full bg-primary/20 overflow-hidden flex items-center justify-center text-primary font-bold border-2 border-primary/20 group-hover:border-primary transition-all">
-                  {user?.avatarUrl ? (
+                  {user?.role === UserRole.EMPLOYER && user.company?.logoUrl ? (
+                    <img
+                      src={user.company.logoUrl.startsWith('http') ? user.company.logoUrl : `${API_BASE_URL}${user.company.logoUrl}`}
+                      alt={user.company.name}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : user?.avatarUrl ? (
                     <img
                       src={user.avatarUrl.startsWith('http') ? user.avatarUrl : `${API_BASE_URL}${user.avatarUrl}`}
                       alt={user.name}
@@ -249,6 +236,13 @@ export function DashboardLayout() {
                       >
                         <span className="material-symbols-outlined text-slate-600 dark:text-slate-400">dashboard</span>
                         <span className="text-sm text-slate-700 dark:text-slate-300">Bảng điều khiển</span>
+                      </Link>
+                      <Link
+                        to="/candidate/saved-jobs"
+                        className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                      >
+                        <span className="material-symbols-outlined text-slate-600 dark:text-slate-400">bookmark</span>
+                        <span className="text-sm text-slate-700 dark:text-slate-300">Công việc đã lưu</span>
                       </Link>
                       <Link
                         to="/candidate/profile"
@@ -283,6 +277,13 @@ export function DashboardLayout() {
                         <span className="text-sm text-slate-700 dark:text-slate-300">Tìm kiếm ứng viên</span>
                       </Link>
                       <Link
+                        to="/employer/saved-candidates"
+                        className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                      >
+                        <span className="material-symbols-outlined text-slate-600 dark:text-slate-400">bookmark</span>
+                        <span className="text-sm text-slate-700 dark:text-slate-300">Ứng viên đã lưu</span>
+                      </Link>
+                      <Link
                         to="/employer/messages"
                         className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
                       >
@@ -307,13 +308,7 @@ export function DashboardLayout() {
                       <span className="text-sm text-slate-700 dark:text-slate-300">Bảng điều khiển</span>
                     </Link>
                   )}
-                  <Link
-                    to="/settings"
-                    className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-                  >
-                    <span className="material-symbols-outlined text-slate-600 dark:text-slate-400">settings</span>
-                    <span className="text-sm text-slate-700 dark:text-slate-300">Cài đặt</span>
-                  </Link>
+
                 </div>
                 <div className="p-2 border-t border-slate-200 dark:border-slate-800">
                   <button
@@ -334,6 +329,9 @@ export function DashboardLayout() {
           <Outlet />
         </div>
       </main>
+
+      {/* Floating Chat Widget */}
+      <FloatingChat />
     </div>
   )
 }

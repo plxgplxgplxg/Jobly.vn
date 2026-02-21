@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { adminService } from '../../services/api/admin.service'
 import type { Job } from '../../services/api/job.service'
+import { Pagination } from '../../components/common/Pagination'
 
 export default function JobApprovalPage() {
   const [jobs, setJobs] = useState<Job[]>([])
@@ -22,7 +23,7 @@ export default function JobApprovalPage() {
       setLoading(true)
       setError(null)
       const response = await adminService.getPendingJobs(page, limit)
-      setJobs(response.data)
+      setJobs(response.items)
       setTotal(response.total)
     } catch (err) {
       setError('Không thể tải danh sách tin tuyển dụng')
@@ -39,7 +40,7 @@ export default function JobApprovalPage() {
 
   const handleApprove = async (jobId: string) => {
     try {
-      await adminService.approveJob(jobId, 'approved')
+      await adminService.approveJob(jobId)
       setJobs(jobs.filter(job => job.id !== jobId))
       setTotal(total - 1)
       setShowModal(false)
@@ -51,8 +52,11 @@ export default function JobApprovalPage() {
   }
 
   const handleReject = async (jobId: string) => {
+    const reason = window.prompt('Nhập lý do từ chối:')
+    if (reason === null) return
+
     try {
-      await adminService.approveJob(jobId, 'rejected')
+      await adminService.rejectJob(jobId, reason)
       setJobs(jobs.filter(job => job.id !== jobId))
       setTotal(total - 1)
       setShowModal(false)
@@ -110,8 +114,8 @@ export default function JobApprovalPage() {
                   <div className="flex items-center gap-2">
                     <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
                       {job.type === 'full_time' ? 'Toàn thời gian' :
-                       job.type === 'part_time' ? 'Bán thời gian' :
-                       job.type === 'contract' ? 'Hợp đồng' : 'Thực tập'}
+                        job.type === 'part_time' ? 'Bán thời gian' :
+                          job.type === 'contract' ? 'Hợp đồng' : 'Thực tập'}
                     </span>
                   </div>
                 </div>
@@ -128,29 +132,7 @@ export default function JobApprovalPage() {
             ))}
           </div>
 
-          {totalPages > 1 && (
-            <div className="mt-8 flex justify-center">
-              <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
-                <button
-                  onClick={() => setPage(Math.max(1, page - 1))}
-                  disabled={page === 1}
-                  className="relative inline-flex items-center px-4 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Trước
-                </button>
-                <span className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700">
-                  Trang {page} / {totalPages}
-                </span>
-                <button
-                  onClick={() => setPage(Math.min(totalPages, page + 1))}
-                  disabled={page === totalPages}
-                  className="relative inline-flex items-center px-4 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Sau
-                </button>
-              </nav>
-            </div>
-          )}
+          <Pagination currentPage={page} totalPages={totalPages} onPageChange={setPage} />
         </>
       )}
 
@@ -206,8 +188,8 @@ export default function JobApprovalPage() {
                   <p className="text-sm text-gray-600">Loại hình</p>
                   <p className="text-gray-900 font-medium">
                     {selectedJob.type === 'full_time' ? 'Toàn thời gian' :
-                     selectedJob.type === 'part_time' ? 'Bán thời gian' :
-                     selectedJob.type === 'contract' ? 'Hợp đồng' : 'Thực tập'}
+                      selectedJob.type === 'part_time' ? 'Bán thời gian' :
+                        selectedJob.type === 'contract' ? 'Hợp đồng' : 'Thực tập'}
                   </p>
                 </div>
                 <div>

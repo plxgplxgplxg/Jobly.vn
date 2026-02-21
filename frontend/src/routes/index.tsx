@@ -22,6 +22,7 @@ import { CVBuilderPage } from '../pages/candidate/CVBuilderPage'
 import { ProfilePage } from '../pages/candidate/ProfilePage'
 import { ProfileCompletionPage } from '../pages/candidate/ProfileCompletionPage'
 import { CandidateDashboard } from '../pages/candidate/CandidateDashboard'
+import { SavedJobsPage } from '../pages/candidate/SavedJobsPage'
 
 import { EmployerDashboard } from '../pages/employer/EmployerDashboard'
 import { JobManagementPage } from '../pages/employer/JobManagementPage'
@@ -30,12 +31,13 @@ import { ApplicationManagementPage } from '../pages/employer/ApplicationManageme
 import { CandidateSearchPage } from '../pages/employer/CandidateSearchPage'
 import { CandidateDetailPage } from '../pages/employer/CandidateDetailPage'
 import { EmployerProfilePage } from '../pages/employer/EmployerProfilePage'
+import { SavedCandidatesPage } from '../pages/employer/SavedCandidatesPage'
 
 import AdminDashboard from '../pages/admin/AdminDashboard'
 import UserManagementPage from '../pages/admin/UserManagementPage'
 import JobApprovalPage from '../pages/admin/JobApprovalPage'
-import TemplateManagementPage from '../pages/admin/TemplateManagementPage'
-import AlertManagementPage from '../pages/admin/AlertManagementPage'
+
+
 
 import { MessagesPage } from '../pages/MessagesPage'
 import { CompaniesPage } from '../pages/CompaniesPage'
@@ -139,6 +141,10 @@ export const router = createBrowserRouter([
         path: 'profile',
         element: <ProfilePage />,
       },
+      {
+        path: 'saved-jobs',
+        element: <SavedJobsPage />,
+      },
     ],
   },
   {
@@ -166,7 +172,7 @@ export const router = createBrowserRouter([
         element: <ApplicationManagementPage />,
       },
       {
-        path: 'applications/job/:jobId',
+        path: 'jobs/:jobId/applications',
         element: <ApplicationManagementPage />,
       },
       {
@@ -184,6 +190,10 @@ export const router = createBrowserRouter([
       {
         path: 'profile',
         element: <EmployerProfilePage />,
+      },
+      {
+        path: 'saved-candidates',
+        element: <SavedCandidatesPage />,
       },
     ],
   },
@@ -207,14 +217,8 @@ export const router = createBrowserRouter([
         path: 'jobs',
         element: <JobApprovalPage />,
       },
-      {
-        path: 'templates',
-        element: <TemplateManagementPage />,
-      },
-      {
-        path: 'alerts',
-        element: <AlertManagementPage />,
-      },
+
+
     ],
   },
 ])

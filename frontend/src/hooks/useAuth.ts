@@ -38,7 +38,7 @@ export function useAuth() {
     } catch (error: any) {
       addNotification({
         type: 'error',
-        message: error.response?.data?.message || 'Đăng nhập thất bại'
+        message: error.response?.data?.message || error.response?.data?.error || 'Đăng nhập thất bại'
       })
       throw error
     } finally {
@@ -82,7 +82,7 @@ export function useAuth() {
     } catch (error: any) {
       addNotification({
         type: 'error',
-        message: error.response?.data?.message || 'Đăng ký thất bại'
+        message: error.response?.data?.message || error.response?.data?.error || 'Đăng ký thất bại'
       })
       throw error
     } finally {
@@ -118,7 +118,7 @@ export function useAuth() {
     } catch (error: any) {
       addNotification({
         type: 'error',
-        message: error.response?.data?.message || 'Xác thực OTP thất bại'
+        message: error.response?.data?.message || error.response?.data?.error || 'Xác thực OTP thất bại'
       })
       throw error
     } finally {
@@ -158,7 +158,7 @@ export function useAuth() {
     } catch (error: any) {
       addNotification({
         type: 'error',
-        message: error.response?.data?.message || 'Gửi mã OTP thất bại'
+        message: error.response?.data?.message || error.response?.data?.error || 'Gửi mã OTP thất bại'
       })
       throw error
     } finally {
@@ -180,7 +180,7 @@ export function useAuth() {
     } catch (error: any) {
       addNotification({
         type: 'error',
-        message: error.response?.data?.message || 'Đổi mật khẩu thất bại'
+        message: error.response?.data?.message || error.response?.data?.error || 'Đổi mật khẩu thất bại'
       })
       throw error
     } finally {

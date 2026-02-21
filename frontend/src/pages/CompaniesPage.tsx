@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { companyService, type Company } from '../services/api/company.service'
 import { useUIStore } from '../store/uiStore'
+import { Pagination } from '../components/common/Pagination'
 
 export function CompaniesPage() {
     const navigate = useNavigate()
@@ -138,29 +139,7 @@ export function CompaniesPage() {
                 )}
 
                 {/* Pagination */}
-                {!isLoading && totalPages > 1 && (
-                    <div className="flex justify-center gap-2">
-                        <button
-                            onClick={() => setPage(p => Math.max(1, p - 1))}
-                            disabled={page === 1}
-                            className="px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-50 dark:hover:bg-slate-800"
-                        >
-                            Trước
-                        </button>
-
-                        <span className="px-4 py-2 text-slate-700 dark:text-slate-300">
-                            Trang {page} / {totalPages}
-                        </span>
-
-                        <button
-                            onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-                            disabled={page === totalPages}
-                            className="px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-50 dark:hover:bg-slate-800"
-                        >
-                            Sau
-                        </button>
-                    </div>
-                )}
+                <Pagination currentPage={page} totalPages={totalPages} onPageChange={setPage} />
             </div>
         </div>
     )

@@ -39,8 +39,8 @@ export function MessageBubble({ message, isOwn }: MessageBubbleProps) {
         <div className="flex flex-col">
           <div
             className={`px-4 py-2 rounded-2xl ${isOwn
-                ? 'bg-blue-600 text-white rounded-br-sm'
-                : 'bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white rounded-bl-sm'
+              ? 'bg-blue-600 text-white rounded-br-sm'
+              : 'bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white rounded-bl-sm'
               }`}
           >
             <p className="text-sm whitespace-pre-wrap break-words">
@@ -50,7 +50,7 @@ export function MessageBubble({ message, isOwn }: MessageBubbleProps) {
 
           {/* Timestamp */}
           <span className={`text-xs text-gray-500 dark:text-gray-400 mt-1 ${isOwn ? 'text-right' : 'text-left'}`}>
-            {formatTime(message.createdAt)}
+            {formatTime(message.sentAt)}
             {isOwn && message.isRead && (
               <span className="ml-1">✓✓</span>
             )}

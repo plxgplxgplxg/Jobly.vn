@@ -13,7 +13,7 @@ interface ApplicationModalProps {
 
 export function ApplicationModal({ job, onClose, onSuccess }: ApplicationModalProps) {
   const { addNotification } = useUIStore()
-  
+
   const [cvList, setCvList] = useState<CV[]>([])
   const [selectedCvId, setSelectedCvId] = useState<string>('')
   const [coverLetter, setCoverLetter] = useState('')
@@ -29,7 +29,7 @@ export function ApplicationModal({ job, onClose, onSuccess }: ApplicationModalPr
       setIsLoadingCVs(true)
       const cvs = await userService.getMyCVs()
       setCvList(cvs)
-      
+
       // Auto-select default CV
       const defaultCV = cvs.find(cv => cv.isDefault)
       if (defaultCV) {
@@ -63,14 +63,15 @@ export function ApplicationModal({ job, onClose, onSuccess }: ApplicationModalPr
       await applicationService.applyJob({
         jobId: job.id,
         cvId: selectedCvId,
+        cvType: 'uploaded',
         coverLetter
       })
-      
+
       addNotification({
         type: 'success',
         message: 'Ứng tuyển thành công!'
       })
-      
+
       onSuccess()
       onClose()
     } catch (error: any) {

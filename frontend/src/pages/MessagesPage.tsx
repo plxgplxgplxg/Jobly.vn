@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { Button } from '../components/common/Button'
 import { useMessageStore } from '../store/messageStore'
@@ -21,14 +21,27 @@ export function MessagesPage() {
     loadConversations()
   }, [])
 
-  // Xu ly query parameter ?user=id de khoi tao conversation
+  const hasProcessedParams = useRef(false)
+
+  // Xu ly query parameter ?user=id hoac ?conversationId=id
   useEffect(() => {
     const userId = searchParams.get('user')
-    // Logic moi: Check userId exist va !isLoading
-    if (userId && !isLoading) {
-      handleStartConversation(userId)
+    const conversationId = searchParams.get('conversationId')
+
+    if (!isLoading && !hasProcessedParams.current && (userId || conversationId)) {
+      hasProcessedParams.current = true
+
+      if (conversationId) {
+        // Neu co conversationId, set active conversation
+        setActiveConversation(conversationId)
+        setShowMobileChat(true)
+        setSearchParams({})
+      } else if (userId) {
+        // Neu co userId, khoi tao conversation
+        handleStartConversation(userId)
+      }
     }
-  }, [searchParams, isLoading, conversations])
+  }, [searchParams, isLoading])
 
   const loadConversations = async () => {
     try {

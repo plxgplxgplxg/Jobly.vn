@@ -7,6 +7,8 @@ export const UserRole = {
 
 export type UserRole = typeof UserRole[keyof typeof UserRole]
 
+import type { Company } from './job.types'
+
 export interface User {
   id: string
   email: string
@@ -36,6 +38,7 @@ export interface UserProfile extends User {
   willingToRelocate?: boolean
   profileCompleted?: boolean
   company?: Company
+  cvs?: CV[]
 }
 
 export interface CandidateProfile {
@@ -79,24 +82,16 @@ export interface Employer extends User {
   company: Company
 }
 
-export interface Company {
-  id: string
-  name: string
-  logo?: string
-  website?: string
-  address: string
-  description: string
-  size?: string
-  industry?: string
-}
 
 export interface CV {
   id: string
   userId: string
+  title?: string
   fileName: string
   fileUrl: string
   fileSize: number
   mimeType: string
   isDefault: boolean
   createdAt: string
+  updatedAt?: string
 }

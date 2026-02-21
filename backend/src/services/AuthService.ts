@@ -79,6 +79,15 @@ class AuthService {
       throw new Error('Email/SĐT hoặc mật khẩu không đúng');
     }
 
+    // Load companies separately since findByEmail/Phone might not include it
+    const userWithCompanies = await UserRepository.findById(user.id);
+    if (!userWithCompanies) throw new Error('User not found after login');
+    user = userWithCompanies;
+
+    console.log('Login attempt:', { identifier: data.identifier, userFound: !!user, status: user?.status, role: user?.role });
+    if (user.status === 'deleted') {
+      throw new Error('Tài khoản đã bị xóa');
+    }
     if (user.status === 'locked') {
       throw new Error('Tài khoản đã bị khóa');
     }
@@ -104,13 +113,24 @@ class AuthService {
   }
 
   private toUserDTO(user: any): UserDTO {
+    const userData = user.toJSON ? user.toJSON() : user;
+    const company = userData.companies && userData.companies.length > 0 ? userData.companies[0] : undefined;
+
     return {
       id: user.id,
       email: user.email,
       name: user.name,
       role: user.role,
       status: user.status,
-      avatarUrl: user.avatarUrl
+      avatarUrl: user.avatarUrl,
+      company: company ? {
+        id: company.id,
+        name: company.name,
+        taxCode: company.taxCode,
+        industry: company.industry,
+        logoUrl: company.logoUrl,
+        description: company.description
+      } : undefined
     };
   }
 }

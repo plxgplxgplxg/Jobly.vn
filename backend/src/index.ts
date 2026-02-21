@@ -13,6 +13,9 @@ import jobRoutes from './routes/job.routes';
 import applicationRoutes from './routes/application.routes';
 import messageRoutes from './routes/message.routes';
 import companyRoutes from './routes/company.routes';
+import notificationRoutes from './routes/notification.routes';
+import savedJobRoutes from './routes/saved-job.routes';
+import savedCandidateRoutes from './routes/saved-candidate.routes';
 import { authenticateJWT, AuthRequest } from './middleware/auth.middleware';
 import { setupCronJobs } from './utils/cronjobs';
 import { setupWebSocket } from './websocket/socket';
@@ -39,6 +42,9 @@ app.use('/jobs', jobRoutes);
 app.use('/applications', applicationRoutes);
 app.use('/messages', messageRoutes);
 app.use('/companies', companyRoutes);
+app.use('/notifications', notificationRoutes);
+app.use('/saved/jobs', savedJobRoutes);
+app.use('/saved/candidates', savedCandidateRoutes);
 
 app.get('/health', (req, res) => {
   res.json({

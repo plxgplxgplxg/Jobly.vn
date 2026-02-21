@@ -22,8 +22,8 @@ export default function AlertManagementPage() {
   const loadUsers = async () => {
     try {
       setLoadingUsers(true)
-      const response = await adminService.getUsers(1, 1000)
-      setUsers(response.data)
+      const response = await adminService.getUsers({ page: 1, limit: 1000 })
+      setUsers(response.items)
     } catch (err) {
       setError('Không thể tải danh sách người dùng')
       console.error(err)
@@ -87,8 +87,7 @@ export default function AlertManagementPage() {
     return users.filter(user => {
       const matchRole = filterRole === 'all' || user.role === filterRole
       const matchSearch = !searchQuery ||
-        user.firstName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        user.lastName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         user.email.toLowerCase().includes(searchQuery.toLowerCase())
       return matchRole && matchSearch
     })
@@ -126,7 +125,7 @@ export default function AlertManagementPage() {
       <div className="grid gap-6 lg:grid-cols-2">
         <div className="bg-white rounded-lg shadow-md p-6">
           <h2 className="text-xl font-semibold text-gray-900 mb-4">Nội dung thông báo</h2>
-          
+
           <form onSubmit={handleSendAlert}>
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -234,19 +233,18 @@ export default function AlertManagementPage() {
                     />
                     <div className="ml-3 flex-1">
                       <p className="text-sm font-medium text-gray-900">
-                        {user.firstName} {user.lastName}
+                        {user.name}
                       </p>
                       <p className="text-sm text-gray-500">{user.email}</p>
                     </div>
-                    <span className={`px-2 py-1 text-xs rounded-full ${
-                      user.role === 'admin' 
-                        ? 'bg-purple-100 text-purple-800'
-                        : user.role === 'employer'
+                    <span className={`px-2 py-1 text-xs rounded-full ${user.role === 'admin'
+                      ? 'bg-purple-100 text-purple-800'
+                      : user.role === 'employer'
                         ? 'bg-blue-100 text-blue-800'
                         : 'bg-green-100 text-green-800'
-                    }`}>
-                      {user.role === 'admin' ? 'Admin' : 
-                       user.role === 'employer' ? 'Employer' : 'Candidate'}
+                      }`}>
+                      {user.role === 'admin' ? 'Admin' :
+                        user.role === 'employer' ? 'Employer' : 'Candidate'}
                     </span>
                   </label>
                 ))}

@@ -3,22 +3,29 @@ import { Link } from 'react-router-dom'
 import { candidateService } from '../../services/api/candidate.service'
 import type { UserProfile } from '../../types/user.types'
 import { useUIStore } from '../../store/uiStore'
+import { Pagination } from '../../components/common/Pagination'
 
 export function CandidateSearchPage() {
     const { addNotification } = useUIStore()
     const [candidates, setCandidates] = useState<UserProfile[]>([])
     const [isLoading, setIsLoading] = useState(true)
     const [searchQuery, setSearchQuery] = useState('')
+    const [currentPage, setCurrentPage] = useState(1)
+    const [totalPages, setTotalPages] = useState(0)
+    const ITEMS_PER_PAGE = 9
 
     useEffect(() => {
         handleSearch()
-    }, [])
+    }, [currentPage])
 
-    const handleSearch = async () => {
+    const handleSearch = async (resetPage = false) => {
         try {
             setIsLoading(true)
-            const data = await candidateService.searchCandidates(searchQuery)
-            setCandidates(data)
+            const page = resetPage ? 1 : currentPage
+            if (resetPage) setCurrentPage(1)
+            const data = await candidateService.searchCandidates(searchQuery, { page, limit: ITEMS_PER_PAGE })
+            setCandidates(data.items)
+            setTotalPages(data.totalPages)
         } catch (error: any) {
             addNotification({
                 type: 'error',
@@ -55,12 +62,12 @@ export function CandidateSearchPage() {
                                 placeholder="Tìm theo tên, kỹ năng, vị trí..."
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
-                                onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+                                onKeyPress={(e) => e.key === 'Enter' && handleSearch(true)}
                                 className="w-full pl-10 pr-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none"
                             />
                         </div>
                         <button
-                            onClick={handleSearch}
+                            onClick={() => handleSearch(true)}
                             className="px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl transition-colors shadow-md hover:shadow-lg flex items-center justify-center gap-2"
                         >
                             Tìm kiếm
@@ -149,6 +156,8 @@ export function CandidateSearchPage() {
                         )}
                     </div>
                 )}
+
+                <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
             </div>
         </div>
     )

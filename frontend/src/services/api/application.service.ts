@@ -21,14 +21,20 @@ class ApplicationService {
     return response
   }
 
-  async getApplicationsForJob(jobId: string): Promise<Application[]> {
-    const response = await apiClient.get<Application[]>(`/applications/job/${jobId}`)
+  async getApplicationsForJob(jobId: string, params?: { status?: string; page?: number; limit?: number }): Promise<{ items: Application[]; total: number; totalPages: number }> {
+    const response = await apiClient.get<any>(`/applications/job/${jobId}`, { params })
     return response
   }
 
-  async updateApplicationStatus(id: string, status: ApplicationStatus): Promise<Application> {
+  async getAllApplications(params?: { status?: string; page?: number; limit?: number }): Promise<{ items: Application[]; total: number; totalPages: number }> {
+    const response = await apiClient.get<any>('/applications/employer/all', { params })
+    return response
+  }
+
+  async updateApplicationStatus(id: string, status: ApplicationStatus, data?: any): Promise<Application> {
     const response = await apiClient.patch<Application>(`/applications/${id}/status`, {
-      status
+      status,
+      ...data
     })
     return response
   }
@@ -40,6 +46,20 @@ class ApplicationService {
 
   async withdrawApplication(id: string): Promise<void> {
     await apiClient.delete(`/applications/${id}`)
+  }
+
+  async updateApplication(id: string, data: Partial<ApplyJobData>): Promise<Application> {
+    const response = await apiClient.put<Application>(`/applications/${id}`, data)
+    return response
+  }
+
+  async getMyApplicationForJob(jobId: string): Promise<Application | null> {
+    try {
+      const response = await apiClient.get<Application>(`/applications/my-application/${jobId}`)
+      return response
+    } catch (error) {
+      return null
+    }
   }
 }
 

@@ -27,7 +27,6 @@ export function ChatWindow({ conversationId }: ChatWindowProps) {
   const typingUserIds = typingUsers[conversationId] || []
   const otherParticipant = conversation?.participants.find(p => p.id !== user?.id)
 
-  // Load messages khi chọn conversation
   useEffect(() => {
     loadMessages()
     joinConversation(conversationId)
@@ -37,7 +36,6 @@ export function ChatWindow({ conversationId }: ChatWindowProps) {
     }
   }, [conversationId])
 
-  // Auto scroll to bottom khi có message mới
   useEffect(() => {
     scrollToBottom()
   }, [conversationMessages])
@@ -47,6 +45,8 @@ export function ChatWindow({ conversationId }: ChatWindowProps) {
       setIsLoading(true)
       const loadedMessages = await messageService.getMessages(conversationId)
       setMessages(conversationId, loadedMessages)
+      useMessageStore.getState().markAsRead(conversationId)
+      await messageService.markAsRead(conversationId)
     } catch (error: any) {
       addNotification({
         type: 'error',
@@ -63,16 +63,12 @@ export function ChatWindow({ conversationId }: ChatWindowProps) {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setMessageInput(e.target.value)
-
-    // Emit typing event
     startTyping(conversationId)
 
-    // Clear previous timeout
     if (typingTimeoutRef.current) {
       clearTimeout(typingTimeoutRef.current)
     }
 
-    // Stop typing sau 2 giây không gõ
     typingTimeoutRef.current = setTimeout(() => {
       stopTyping(conversationId)
     }, 2000)
@@ -81,22 +77,25 @@ export function ChatWindow({ conversationId }: ChatWindowProps) {
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (!messageInput.trim() || isSending) return
+    if (!messageInput.trim() || isSending || !otherParticipant) return
+
+    const messageContent = messageInput.trim()
 
     try {
       setIsSending(true)
 
-      // Stop typing
       if (typingTimeoutRef.current) {
         clearTimeout(typingTimeoutRef.current)
       }
       stopTyping(conversationId)
 
-      // Send message via API
-      await messageService.sendMessage({
-        conversationId,
-        content: messageInput.trim()
+      const sentMessage = await messageService.sendMessage({
+        receiverId: otherParticipant.id,
+        content: messageContent
       })
+
+      const { addMessage } = useMessageStore.getState()
+      addMessage(conversationId, sentMessage)
 
       setMessageInput('')
     } catch (error: any) {
@@ -118,12 +117,12 @@ export function ChatWindow({ conversationId }: ChatWindowProps) {
 
   if (!conversation) {
     return (
-      <div className="h-full flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+      <div className="h-full flex items-center justify-center bg-slate-50 dark:bg-slate-900">
         <div className="text-center">
-          <svg className="mx-auto h-16 w-16 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-          </svg>
-          <p className="text-gray-600 dark:text-gray-400">
+          <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-primary/10 flex items-center justify-center">
+            <span className="material-symbols-outlined text-5xl text-primary">chat_bubble</span>
+          </div>
+          <p className="text-slate-600 dark:text-slate-400 font-medium">
             Chọn một cuộc trò chuyện để bắt đầu
           </p>
         </div>
@@ -132,47 +131,45 @@ export function ChatWindow({ conversationId }: ChatWindowProps) {
   }
 
   return (
-    <div className="h-full flex flex-col bg-white dark:bg-gray-800">
-      {/* Header */}
-      <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center gap-3">
+    <div className="h-full flex flex-col bg-white dark:bg-slate-900">
+      <div className="p-5 bg-gradient-to-r from-primary to-purple-600 flex items-center gap-4">
         {otherParticipant?.avatarUrl ? (
           <img
             src={otherParticipant.avatarUrl}
             alt={otherParticipant.name}
-            className="w-10 h-10 rounded-full object-cover"
+            className="w-12 h-12 rounded-full object-cover ring-2 ring-white/30"
           />
         ) : (
-          <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center">
-            <span className="text-sm font-semibold text-blue-600 dark:text-blue-300">
+          <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center ring-2 ring-white/30">
+            <span className="text-lg font-bold text-white">
               {otherParticipant?.name[0]}
             </span>
           </div>
         )}
         <div className="flex-1">
-          <h3 className="font-semibold text-gray-900 dark:text-white">
+          <h3 className="font-bold text-white text-lg">
             {otherParticipant?.name}
           </h3>
-          <p className="text-sm text-gray-600 dark:text-gray-400">
+          <p className="text-sm text-white/80">
             {otherParticipant?.role === 'employer' ? 'Nhà tuyển dụng' : 'Ứng viên'}
           </p>
         </div>
       </div>
 
-      {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-4">
+      <div className="flex-1 overflow-y-auto p-6 bg-slate-50 dark:bg-slate-800">
         {isLoading ? (
           <div className="flex justify-center items-center h-full">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            <span className="material-symbols-outlined text-primary text-5xl animate-spin">progress_activity</span>
           </div>
         ) : conversationMessages.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-center">
-            <svg className="w-16 h-16 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-            </svg>
-            <p className="text-gray-600 dark:text-gray-400">
+            <div className="w-20 h-20 mb-6 rounded-full bg-primary/10 flex items-center justify-center">
+              <span className="material-symbols-outlined text-5xl text-primary">chat_bubble</span>
+            </div>
+            <p className="text-slate-600 dark:text-slate-400 font-medium mb-2">
               Chưa có tin nhắn nào
             </p>
-            <p className="text-sm text-gray-500 dark:text-gray-500 mt-1">
+            <p className="text-sm text-slate-500 dark:text-slate-500">
               Gửi tin nhắn đầu tiên để bắt đầu cuộc trò chuyện
             </p>
           </div>
@@ -186,19 +183,18 @@ export function ChatWindow({ conversationId }: ChatWindowProps) {
               />
             ))}
 
-            {/* Typing indicator */}
             {typingUserIds.length > 0 && (
-              <div className="flex items-center gap-2 mb-4">
-                <div className="w-8 h-8 rounded-full bg-gray-300 dark:bg-gray-600 flex items-center justify-center">
-                  <span className="text-xs font-semibold text-gray-600 dark:text-gray-300">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-purple-600 flex items-center justify-center">
+                  <span className="text-sm font-bold text-white">
                     {otherParticipant?.name[0]}
                   </span>
                 </div>
-                <div className="px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded-2xl rounded-bl-sm">
-                  <div className="flex gap-1">
-                    <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-                    <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-                    <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                <div className="px-5 py-3 bg-white dark:bg-slate-700 rounded-2xl rounded-bl-md shadow-sm border border-slate-200 dark:border-slate-600">
+                  <div className="flex gap-1.5">
+                    <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                    <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                    <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
                   </div>
                 </div>
               </div>
@@ -209,29 +205,26 @@ export function ChatWindow({ conversationId }: ChatWindowProps) {
         )}
       </div>
 
-      {/* Input */}
-      <div className="p-4 border-t border-gray-200 dark:border-gray-700">
-        <form onSubmit={handleSendMessage} className="flex gap-2">
+      <div className="p-5 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-700">
+        <form onSubmit={handleSendMessage} className="flex gap-3">
           <textarea
             value={messageInput}
             onChange={handleInputChange}
             onKeyPress={handleKeyPress}
             placeholder="Nhập tin nhắn..."
             rows={1}
-            className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+            className="flex-1 px-5 py-3 border border-slate-300 dark:border-slate-600 rounded-full bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 focus:ring-2 focus:ring-primary/50 focus:border-primary resize-none transition-all"
             disabled={isSending}
           />
           <button
             type="submit"
             disabled={!messageInput.trim() || isSending}
-            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+            className="px-6 py-3 bg-gradient-to-r from-primary to-purple-600 text-white rounded-full hover:shadow-lg hover:shadow-primary/30 disabled:opacity-50 disabled:cursor-not-allowed font-bold transition-all flex items-center gap-2"
           >
             {isSending ? (
-              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+              <span className="material-symbols-outlined animate-spin">progress_activity</span>
             ) : (
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-              </svg>
+              <span className="material-symbols-outlined">send</span>
             )}
           </button>
         </form>

@@ -1,6 +1,8 @@
 import { Op } from 'sequelize';
 import User from '../models/User';
 
+import Company from '../models/Company';
+
 class UserRepository {
     async findByEmail(email: string) {
         return User.findOne({ where: { email } });
@@ -11,7 +13,9 @@ class UserRepository {
     }
 
     async findById(id: string) {
-        return User.findByPk(id);
+        return User.findByPk(id, {
+            include: [{ model: Company, as: 'companies' }]
+        });
     }
 
     async create(data: any) {
@@ -24,8 +28,9 @@ class UserRepository {
         return user.update(data);
     }
 
-    async searchCandidates(query: string) {
-        return User.findAll({
+    async searchCandidates(query: string, page = 1, limit = 9) {
+        const offset = (page - 1) * limit
+        const { count, rows } = await User.findAndCountAll({
             where: {
                 role: 'candidate',
                 [Op.or]: [
@@ -34,8 +39,12 @@ class UserRepository {
                     { desiredPosition: { [Op.iLike]: `%${query}%` } },
                     { industry: { [Op.iLike]: `%${query}%` } }
                 ]
-            }
-        });
+            },
+            limit,
+            offset,
+            order: [['createdAt', 'DESC']]
+        })
+        return { rows, count }
     }
 }
 

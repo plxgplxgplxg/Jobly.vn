@@ -23,6 +23,7 @@ export interface UserProfileDTO {
   profileCompleted?: boolean;
   createdAt: Date;
   updatedAt: Date;
+  company?: CompanyDTO;
 }
 
 export interface UpdateProfileDTO {

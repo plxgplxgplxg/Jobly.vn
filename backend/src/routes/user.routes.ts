@@ -39,7 +39,7 @@ router.get('/cv', authenticateJWT, UserController.listCVs);
 router.post('/company', authenticateJWT, UserController.createCompany);
 router.put('/company/:companyId', authenticateJWT, UserController.updateCompany);
 router.get('/company/:companyId', authenticateJWT, UserController.getCompany);
-router.post('/company/:companyId/logo', authenticateJWT, uploadLogo.single('file'), UserController.uploadLogo);
+router.post('/company/:companyId/logo', authenticateJWT, uploadLogo.single('logo'), UserController.uploadLogo);
 
 // Candidate search (for employers)
 router.get('/candidates/search', authenticateJWT, UserController.searchCandidates);

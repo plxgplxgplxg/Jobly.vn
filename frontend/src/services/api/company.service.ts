@@ -1,55 +1,8 @@
 import { apiClient } from './apiClient'
 
-export interface Company {
-  id: string
-  name: string
-  taxCode: string
-  industry: string
-  logoUrl?: string
-  description?: string
-  userId: string
-  createdAt: string
-  updatedAt: string
-}
+import type { Job, Company, CompanyWithJobs, CompaniesResponse, CompanyJobsResponse } from '../../types/job.types'
 
-export interface CompanyWithJobs extends Company {
-  jobs: Job[]
-}
-
-export interface Job {
-  id: string
-  title: string
-  description: string
-  requirements: string
-  benefits?: string
-  location: string
-  salary?: string
-  deadline: string
-  status: string
-  companyId: string
-  createdAt: string
-}
-
-export interface CompaniesResponse {
-  companies: Company[]
-  pagination: {
-    total: number
-    page: number
-    limit: number
-    totalPages: number
-  }
-}
-
-export interface CompanyJobsResponse {
-  company: Company
-  jobs: Job[]
-  pagination: {
-    total: number
-    page: number
-    limit: number
-    totalPages: number
-  }
-}
+export type { Job, Company, CompanyWithJobs, CompaniesResponse, CompanyJobsResponse }
 
 class CompanyService {
   async getCompanies(params?: {

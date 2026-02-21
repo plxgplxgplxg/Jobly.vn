@@ -2,11 +2,17 @@ import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { jobService } from '../../services/api/job.service'
-import { userService, type CV } from '../../services/api/user.service'
+import { userService } from '../../services/api/user.service'
+import type { CV } from '../../types/user.types'
 import { applicationService } from '../../services/api/application.service'
+import messageService from '../../services/api/message.service'
+import { savedJobService } from '../../services/api/saved-job.service'
 import type { Job } from '../../types/job.types'
 import { useUIStore } from '../../store/uiStore'
 import { useAuthStore } from '../../store/authStore'
+import { EditApplicationModal } from '../../components/application/EditApplicationModal'
+import type { Application } from '../../types/api.types'
+import { API_BASE_URL } from '../../constants/api'
 
 const JOB_TYPE_LABELS: Record<string, string> = {
   full_time: 'Toàn thời gian',
@@ -32,6 +38,8 @@ export function JobDetailPage() {
   const [cvList, setCvList] = useState<CV[]>([])
   const [isLoadingCVs, setIsLoadingCVs] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [existingApplication, setExistingApplication] = useState<Application | null>(null)
+  const [showEditModal, setShowEditModal] = useState(false)
 
   const { register, handleSubmit, formState: { errors }, reset } = useForm<ApplicationForm>()
 
@@ -46,6 +54,22 @@ export function JobDetailPage() {
       loadCVs()
     }
   }, [showApplicationModal, isAuthenticated])
+
+  useEffect(() => {
+    if (id && isAuthenticated) {
+      checkApplicationStatus()
+    }
+  }, [id, isAuthenticated])
+
+  const checkApplicationStatus = async () => {
+    if (!id) return;
+    try {
+      const app = await applicationService.getMyApplicationForJob(id)
+      setExistingApplication(app)
+    } catch (error) {
+      console.error('Failed to check application status', error)
+    }
+  }
 
   const loadJob = async (jobId: string) => {
     try {
@@ -88,6 +112,16 @@ export function JobDetailPage() {
       navigate('/auth/login', { state: { returnUrl: `/jobs/${id}` } })
       return
     }
+
+    if (existingApplication) {
+      addNotification({
+        type: 'info',
+        message: 'Bạn đã ứng tuyển công việc này. Bạn có thể cập nhật hồ sơ.'
+      })
+      setShowEditModal(true)
+      return
+    }
+
     setShowApplicationModal(true)
   }
 
@@ -120,6 +154,41 @@ export function JobDetailPage() {
       })
     } finally {
       setIsSubmitting(false)
+    }
+  }
+
+  const [isSaved, setIsSaved] = useState(false)
+
+  useEffect(() => {
+    if (id && isAuthenticated) {
+      checkSaveStatus()
+    }
+  }, [id, isAuthenticated])
+
+  const checkSaveStatus = async () => {
+    if (!id) return
+    try {
+      const { saved } = await savedJobService.checkStatus(id)
+      setIsSaved(saved)
+    } catch (e) { console.error(e) }
+  }
+
+  const handleToggleSave = async () => {
+    if (!isAuthenticated) {
+      navigate('/auth/login', { state: { returnUrl: `/jobs/${id}` } })
+      return
+    }
+    if (!id) return
+    try {
+      const { saved } = await savedJobService.toggle(id)
+      setIsSaved(saved)
+      addNotification({
+        type: 'success',
+        message: saved ? 'Đã lưu tin tuyển dụng' : 'Đã bỏ lưu tin tuyển dụng'
+      })
+    } catch (e) {
+      console.error(e)
+      addNotification({ type: 'error', message: 'Có lỗi xảy ra' })
     }
   }
 
@@ -176,9 +245,9 @@ export function JobDetailPage() {
             {/* Job header */}
             <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-6">
               <div className="flex items-start gap-4">
-                {job.company?.logo ? (
+                {job.company?.logoUrl ? (
                   <img
-                    src={job.company.logo}
+                    src={job.company.logoUrl.startsWith('http') ? job.company.logoUrl : `${API_BASE_URL}${job.company.logoUrl}`}
                     alt={job.company.name}
                     className="w-20 h-20 rounded-lg object-cover border border-gray-200 dark:border-gray-600"
                   />
@@ -258,10 +327,61 @@ export function JobDetailPage() {
             <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-6 sticky top-8">
               <button
                 onClick={handleApplyClick}
-                className="w-full px-6 py-3 bg-primary text-white rounded-lg hover:bg-primary/90 font-bold mb-6 transition-all shadow-lg shadow-primary/30 flex items-center justify-center gap-2"
+                className={`w-full px-6 py-3 rounded-lg font-bold mb-6 transition-all shadow-lg flex items-center justify-center gap-2 ${existingApplication
+                  ? 'bg-green-600 hover:bg-green-700 text-white shadow-green-600/30'
+                  : 'bg-primary hover:bg-primary/90 text-white shadow-primary/30'
+                  }`}
               >
-                <span className="material-symbols-outlined">send</span>
-                Ứng tuyển ngay
+                <span className="material-symbols-outlined">{existingApplication ? 'edit_document' : 'send'}</span>
+                {existingApplication ? 'Đã ứng tuyển (Cập nhật)' : 'Ứng tuyển ngay'}
+              </button>
+
+              <button
+                onClick={handleToggleSave}
+                className={`w-full px-6 py-3 border-2 ${isSaved ? 'border-pink-500 text-pink-500 bg-pink-50 dark:bg-pink-900/20' : 'border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 bg-transparent'} rounded-lg hover:border-pink-500 hover:text-pink-500 font-bold mb-4 transition-all flex items-center justify-center gap-2`}
+              >
+                <span className="material-symbols-outlined" style={isSaved ? { fontVariationSettings: "'FILL' 1" } : {}}>favorite</span>
+                {isSaved ? 'Đã lưu tin' : 'Lưu tin tuyển dụng'}
+              </button>
+
+              <button
+                onClick={async () => {
+                  if (!isAuthenticated) {
+                    addNotification({
+                      type: 'info',
+                      message: 'Vui lòng đăng nhập để nhắn tin'
+                    })
+                    navigate('/auth/login', { state: { returnUrl: `/jobs/${id}` } })
+                    return
+                  }
+
+                  if (!job.company?.userId) {
+                    addNotification({
+                      type: 'error',
+                      message: 'Không thể nhắn tin với nhà tuyển dụng này (Thiếu thông tin)'
+                    })
+                    return
+                  }
+
+                  try {
+                    // Create conversation and redirect
+                    const conversation = await messageService.createConversation({
+                      participantId: job.company.userId
+                    });
+
+                    navigate(`/candidate/messages?conversationId=${conversation.id}`)
+                  } catch (error) {
+                    console.error('Failed to create conversation', error)
+                    addNotification({
+                      type: 'error',
+                      message: 'Không thể bắt đầu cuộc trò chuyện'
+                    })
+                  }
+                }}
+                className="w-full px-6 py-3 border-2 border-primary text-primary bg-transparent rounded-lg hover:bg-primary/5 font-bold mb-6 transition-all flex items-center justify-center gap-2"
+              >
+                <span className="material-symbols-outlined">chat</span>
+                Nhắn tin với nhà tuyển dụng
               </button>
 
               <div className="space-y-4 text-sm border-t border-gray-200 dark:border-gray-700 pt-4">
@@ -310,102 +430,119 @@ export function JobDetailPage() {
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Application Modal */}
-      {showApplicationModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fadeIn">
-          <div className="bg-white dark:bg-gray-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl transform transition-all scale-100">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Ứng tuyển công việc</h2>
-              <button
-                onClick={() => setShowApplicationModal(false)}
-                className="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300 transition-colors"
-              >
-                <span className="material-symbols-outlined">close</span>
-              </button>
-            </div>
 
-            <form onSubmit={handleSubmit(onSubmitApplication)}>
-              <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Chọn CV của bạn <span className="text-red-500">*</span>
-                </label>
-
-                {isLoadingCVs ? (
-                  <div className="text-gray-500 text-sm flex items-center">
-                    <span className="material-symbols-outlined animate-spin text-sm mr-2">progress_activity</span>
-                    Đang tải danh sách CV...
-                  </div>
-                ) : cvList.length > 0 ? (
-                  <select
-                    {...register('cvId', { required: 'Vui lòng chọn CV để ứng tuyển' })}
-                    className="mt-1 block w-full pl-3 pr-10 py-3 text-base border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-primary focus:border-primary sm:text-sm rounded-lg"
+        {/* Application Modal */}
+        {
+          showApplicationModal && (
+            <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fadeIn">
+              <div className="bg-white dark:bg-gray-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl transform transition-all scale-100">
+                <div className="flex justify-between items-center mb-6">
+                  <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Ứng tuyển công việc</h2>
+                  <button
+                    onClick={() => setShowApplicationModal(false)}
+                    className="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300 transition-colors"
                   >
-                    <option value="">-- Chọn CV --</option>
-                    {cvList.map(cv => (
-                      <option key={cv.id} value={cv.id}>
-                        {cv.fileName} {cv.isDefault ? '(Mặc định)' : ''}
-                      </option>
-                    ))}
-                  </select>
-                ) : (
-                  <div className="text-yellow-600 bg-yellow-50 dark:bg-yellow-900/20 p-3 rounded-lg text-sm flex items-center">
-                    <span className="material-symbols-outlined mr-2">warning</span>
-                    Bạn chưa có CV nào.
+                    <span className="material-symbols-outlined">close</span>
+                  </button>
+                </div>
+
+                <form onSubmit={handleSubmit(onSubmitApplication)}>
+                  <div className="mb-6">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Chọn CV của bạn <span className="text-red-500">*</span>
+                    </label>
+
+                    {isLoadingCVs ? (
+                      <div className="text-gray-500 text-sm flex items-center">
+                        <span className="material-symbols-outlined animate-spin text-sm mr-2">progress_activity</span>
+                        Đang tải danh sách CV...
+                      </div>
+                    ) : cvList.length > 0 ? (
+                      <select
+                        {...register('cvId', { required: 'Vui lòng chọn CV để ứng tuyển' })}
+                        className="mt-1 block w-full pl-3 pr-10 py-3 text-base border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-primary focus:border-primary sm:text-sm rounded-lg"
+                      >
+                        <option value="">-- Chọn CV --</option>
+                        {cvList.map(cv => (
+                          <option key={cv.id} value={cv.id}>
+                            {cv.fileName} {cv.isDefault ? '(Mặc định)' : ''}
+                          </option>
+                        ))}
+                      </select>
+                    ) : (
+                      <div className="text-yellow-600 bg-yellow-50 dark:bg-yellow-900/20 p-3 rounded-lg text-sm flex items-center">
+                        <span className="material-symbols-outlined mr-2">warning</span>
+                        Bạn chưa có CV nào.
+                        <button
+                          type="button"
+                          onClick={() => navigate('/candidate/cv-builder')}
+                          className="ml-1 font-bold underline hover:text-yellow-700"
+                        >
+                          Tạo ngay
+                        </button>
+                      </div>
+                    )}
+                    {errors.cvId && (
+                      <p className="mt-1 text-sm text-red-600">{errors.cvId.message}</p>
+                    )}
+                  </div>
+
+                  <div className="mb-6">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Thư giới thiệu (Cover Letter)
+                    </label>
+                    <textarea
+                      {...register('coverLetter')}
+                      rows={4}
+                      className="mt-1 block w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg shadow-sm py-3 px-4 focus:ring-primary focus:border-primary sm:text-sm"
+                      placeholder="Giới thiệu bản thân và lý do bạn phù hợp với vị trí này..."
+                    />
+                  </div>
+
+                  <div className="flex justify-end gap-3 pt-4 border-t border-gray-100 dark:border-gray-700">
                     <button
                       type="button"
-                      onClick={() => navigate('/candidate/cv-builder')}
-                      className="ml-1 font-bold underline hover:text-yellow-700"
+                      onClick={() => setShowApplicationModal(false)}
+                      className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 font-medium transition-colors"
                     >
-                      Tạo ngay
+                      Hủy
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={isSubmitting || (cvList.length === 0)}
+                      className="px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed font-bold shadow-lg shadow-primary/30 flex items-center"
+                    >
+                      {isSubmitting ? (
+                        <>
+                          <span className="material-symbols-outlined animate-spin text-sm mr-2">progress_activity</span>
+                          Đang gửi...
+                        </>
+                      ) : (
+                        'Gửi hồ sơ'
+                      )}
                     </button>
                   </div>
-                )}
-                {errors.cvId && (
-                  <p className="mt-1 text-sm text-red-600">{errors.cvId.message}</p>
-                )}
+                </form>
               </div>
-
-              <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Thư giới thiệu (Cover Letter)
-                </label>
-                <textarea
-                  {...register('coverLetter')}
-                  rows={4}
-                  className="mt-1 block w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg shadow-sm py-3 px-4 focus:ring-primary focus:border-primary sm:text-sm"
-                  placeholder="Giới thiệu bản thân và lý do bạn phù hợp với vị trí này..."
-                />
-              </div>
-
-              <div className="flex justify-end gap-3 pt-4 border-t border-gray-100 dark:border-gray-700">
-                <button
-                  type="button"
-                  onClick={() => setShowApplicationModal(false)}
-                  className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 font-medium transition-colors"
-                >
-                  Hủy
-                </button>
-                <button
-                  type="submit"
-                  disabled={isSubmitting || (cvList.length === 0)}
-                  className="px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed font-bold shadow-lg shadow-primary/30 flex items-center"
-                >
-                  {isSubmitting ? (
-                    <>
-                      <span className="material-symbols-outlined animate-spin text-sm mr-2">progress_activity</span>
-                      Đang gửi...
-                    </>
-                  ) : (
-                    'Gửi hồ sơ'
-                  )}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+            </div>
+          )
+        }
+        {/* Edit Application Modal */}
+        {
+          showEditModal && existingApplication && (
+            <EditApplicationModal
+              application={existingApplication}
+              isOpen={true}
+              onClose={() => setShowEditModal(false)}
+              onSuccess={() => {
+                checkApplicationStatus();
+                setExistingApplication(null); // Or reload to get updated data
+              }}
+            />
+          )
+        }
+      </div>
     </div>
   )
 }

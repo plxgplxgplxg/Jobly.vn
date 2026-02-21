@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { adminService, type AdminUser } from '../../services/api/admin.service'
+import { Pagination } from '../../components/common/Pagination'
 
 export default function UserManagementPage() {
   const [users, setUsers] = useState<AdminUser[]>([])
@@ -8,21 +9,27 @@ export default function UserManagementPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [page, setPage] = useState(1)
   const [total, setTotal] = useState(0)
+  const [totalPages, setTotalPages] = useState(0)
   const [filterRole, setFilterRole] = useState<string>('all')
   const [filterStatus, setFilterStatus] = useState<string>('all')
 
-  const limit = 20
+  const limit = 10
 
   useEffect(() => {
     loadUsers()
-  }, [page])
+  }, [page, filterRole, filterStatus])
 
   const loadUsers = async () => {
     try {
       setLoading(true)
       setError(null)
-      const response = await adminService.getUsers(page, limit)
-      setUsers(response.data)
+      const params: any = { page, limit }
+      if (filterRole !== 'all') params.role = filterRole
+      if (filterStatus !== 'all') params.status = filterStatus
+      if (searchQuery.trim()) params.keyword = searchQuery.trim()
+      const response = await adminService.getUsers(params)
+      setUsers(response.items)
+      setTotalPages(response.totalPages)
       setTotal(response.total)
     } catch (err) {
       setError('Không thể tải danh sách người dùng')
@@ -33,23 +40,8 @@ export default function UserManagementPage() {
   }
 
   const handleSearch = async () => {
-    if (!searchQuery.trim()) {
-      loadUsers()
-      return
-    }
-
-    try {
-      setLoading(true)
-      setError(null)
-      const results = await adminService.searchUsers(searchQuery)
-      setUsers(results)
-      setTotal(results.length)
-    } catch (err) {
-      setError('Không thể tìm kiếm người dùng')
-      console.error(err)
-    } finally {
-      setLoading(false)
-    }
+    setPage(1)
+    loadUsers()
   }
 
   const handleLockUser = async (userId: string) => {
@@ -79,13 +71,22 @@ export default function UserManagementPage() {
     }
   }
 
-  const filteredUsers = users.filter(user => {
-    const matchRole = filterRole === 'all' || user.role === filterRole
-    const matchStatus = filterStatus === 'all' || user.status === filterStatus
-    return matchRole && matchStatus
-  })
+  const handleRejectUser = async (userId: string) => {
+    const reason = window.prompt('Nhập lý do từ chối:')
+    if (reason === null) return
 
-  const totalPages = Math.ceil(total / limit)
+    try {
+      await adminService.rejectUser(userId, reason)
+      setUsers(users.map(user =>
+        user.id === userId ? { ...user, status: 'deleted' } : user
+      ))
+    } catch (err) {
+      setError('Không thể từ chối người dùng')
+      console.error(err)
+    }
+  }
+
+
 
   if (loading && users.length === 0) {
     return (
@@ -97,9 +98,11 @@ export default function UserManagementPage() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Quản lý Người dùng</h1>
-        <p className="text-gray-600">Quản lý tài khoản người dùng trong hệ thống</p>
+      <div className="mb-6 flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Quản lý Người dùng</h1>
+          <p className="text-gray-600">Quản lý tài khoản người dùng trong hệ thống (Tổng cộng: {total})</p>
+        </div>
       </div>
 
       {error && (
@@ -135,7 +138,7 @@ export default function UserManagementPage() {
             </label>
             <select
               value={filterRole}
-              onChange={(e) => setFilterRole(e.target.value)}
+              onChange={(e) => { setFilterRole(e.target.value); setPage(1) }}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
               <option value="all">Tất cả</option>
@@ -151,7 +154,7 @@ export default function UserManagementPage() {
             </label>
             <select
               value={filterStatus}
-              onChange={(e) => setFilterStatus(e.target.value)}
+              onChange={(e) => { setFilterStatus(e.target.value); setPage(1) }}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
               <option value="all">Tất cả</option>
@@ -189,14 +192,14 @@ export default function UserManagementPage() {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {filteredUsers.length === 0 ? (
+              {users.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="px-6 py-8 text-center text-gray-500">
                     Không tìm thấy người dùng nào
                   </td>
                 </tr>
               ) : (
-                filteredUsers.map((user) => (
+                users.map((user) => (
                   <tr key={user.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900">
@@ -222,10 +225,10 @@ export default function UserManagementPage() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${user.status === 'active'
-                          ? 'bg-green-100 text-green-800'
-                          : user.status === 'pending'
-                            ? 'bg-yellow-100 text-yellow-800'
-                            : 'bg-red-100 text-red-800'
+                        ? 'bg-green-100 text-green-800'
+                        : user.status === 'pending'
+                          ? 'bg-yellow-100 text-yellow-800'
+                          : 'bg-red-100 text-red-800'
                         }`}>
                         {user.status === 'active' ? 'Hoạt động' :
                           user.status === 'pending' ? 'Chờ duyệt' :
@@ -234,12 +237,21 @@ export default function UserManagementPage() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm">
                       {user.status === 'pending' ? (
-                        <button
-                          onClick={() => handleUnlockUser(user.id)}
-                          className="px-3 py-1 bg-green-100 text-green-700 rounded-lg font-medium hover:bg-green-200 transition-colors"
-                        >
-                          Duyệt
-                        </button>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => handleUnlockUser(user.id)}
+                            className="px-3 py-1 bg-green-100 text-green-700 rounded-lg font-medium hover:bg-green-200 transition-colors"
+                          >
+                            Duyệt
+                          </button>
+                          <button
+                            onClick={() => handleRejectUser(user.id)}
+                            className="px-3 py-1 bg-red-100 text-red-700 rounded-lg font-medium hover:bg-red-200 transition-colors"
+                          >
+                            Từ chối
+                          </button>
+                        </div>
+
                       ) : user.status === 'active' ? (
                         <button
                           onClick={() => handleLockUser(user.id)}
@@ -263,68 +275,7 @@ export default function UserManagementPage() {
           </table>
         </div>
 
-        {totalPages > 1 && (
-          <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
-            <div className="flex-1 flex justify-between sm:hidden">
-              <button
-                onClick={() => setPage(Math.max(1, page - 1))}
-                disabled={page === 1}
-                className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Trước
-              </button>
-              <button
-                onClick={() => setPage(Math.min(totalPages, page + 1))}
-                disabled={page === totalPages}
-                className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Sau
-              </button>
-            </div>
-            <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-              <div>
-                <p className="text-sm text-gray-700">
-                  Hiển thị <span className="font-medium">{(page - 1) * limit + 1}</span> đến{' '}
-                  <span className="font-medium">{Math.min(page * limit, total)}</span> trong{' '}
-                  <span className="font-medium">{total}</span> kết quả
-                </p>
-              </div>
-              <div>
-                <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
-                  <button
-                    onClick={() => setPage(Math.max(1, page - 1))}
-                    disabled={page === 1}
-                    className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    Trước
-                  </button>
-                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                    const pageNum = i + 1
-                    return (
-                      <button
-                        key={pageNum}
-                        onClick={() => setPage(pageNum)}
-                        className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${page === pageNum
-                          ? 'z-10 bg-blue-50 border-blue-500 text-blue-600'
-                          : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
-                          }`}
-                      >
-                        {pageNum}
-                      </button>
-                    )
-                  })}
-                  <button
-                    onClick={() => setPage(Math.min(totalPages, page + 1))}
-                    disabled={page === totalPages}
-                    className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    Sau
-                  </button>
-                </nav>
-              </div>
-            </div>
-          </div>
-        )}
+        <Pagination currentPage={page} totalPages={totalPages} onPageChange={setPage} />
       </div>
     </div>
   )

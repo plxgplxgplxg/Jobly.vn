@@ -1,5 +1,6 @@
 import { apiClient } from './apiClient'
 import type { Job, SearchQuery } from '../../types/job.types'
+export type { Job, SearchQuery }
 
 export interface JobSearchResponse {
   jobs: Job[]
@@ -42,12 +43,18 @@ class JobService {
     return await apiClient.post<{ message: string }>(`/jobs/${jobId}/apply`, { cvId })
   }
 
-  async getMyJobs(): Promise<Job[]> {
-    const response = await apiClient.get<any>('/jobs/my-jobs')
-    return (response.items || []).map((job: any) => ({
-      ...job,
-      expiresAt: job.deadline
-    }))
+  async getMyJobs(params?: { page?: number; limit?: number }): Promise<{ items: Job[]; total: number; page: number; limit: number; totalPages: number }> {
+    const response = await apiClient.get<any>('/jobs/my-jobs', { params })
+    return {
+      items: (response.items || []).map((job: any) => ({
+        ...job,
+        expiresAt: job.deadline
+      })),
+      total: response.total || 0,
+      page: response.page || 1,
+      limit: response.limit || 10,
+      totalPages: response.totalPages || 0
+    }
   }
 
   async createJob(data: any): Promise<Job> {
@@ -56,6 +63,18 @@ class JobService {
       ...response,
       expiresAt: response.deadline
     }
+  }
+
+  async updateJob(id: string, data: any): Promise<Job> {
+    const response = await apiClient.put<any>(`/jobs/${id}`, data)
+    return {
+      ...response,
+      expiresAt: response.deadline
+    }
+  }
+
+  async deleteJob(id: string): Promise<void> {
+    await apiClient.delete(`/jobs/${id}`)
   }
 }
 

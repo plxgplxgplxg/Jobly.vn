@@ -1,6 +1,17 @@
 import { apiClient } from './apiClient'
 
 import type { UserProfile, CV } from '../../types/user.types'
+export type { UserProfile, CV }
+
+export type UpdateProfileData = {
+  firstName: string
+  lastName: string
+  phone: string
+  address?: string
+  dateOfBirth?: string
+  gender?: 'male' | 'female' | 'other'
+  summary?: string
+}
 
 class UserService {
   async getProfile(): Promise<UserProfile> {
@@ -68,6 +79,18 @@ class UserService {
 
   async updateCompany(companyId: string, data: any): Promise<any> {
     const response = await apiClient.put(`/users/company/${companyId}`, data)
+    return response
+  }
+
+  async uploadLogo(companyId: string, file: File): Promise<{ logoUrl: string }> {
+    const formData = new FormData()
+    formData.append('logo', file)
+
+    const response = await apiClient.post<{ logoUrl: string }>(`/users/company/${companyId}/logo`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    })
     return response
   }
 }

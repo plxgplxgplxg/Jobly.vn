@@ -151,7 +151,7 @@ class MessageService {
 
     const messages = await Message.findAll({
       where: { conversationId },
-      order: [['sentAt', 'DESC']],
+      order: [['sentAt', 'ASC']],
       limit,
     });
 
@@ -229,11 +229,13 @@ class MessageService {
       order: [['sentAt', 'DESC']],
     });
 
-    // Count unread messages
+    // Chỉ đếm tin nhắn chưa đọc mà người khác gửi cho mình
+    // Không đếm tin nhắn mình gửi đi (senderId = currentUserId)
     const unreadCount = await Message.count({
       where: {
         conversationId: conversation.id,
         receiverId: currentUserId,
+        senderId: { [Op.ne]: currentUserId },
         isRead: false,
       },
     });

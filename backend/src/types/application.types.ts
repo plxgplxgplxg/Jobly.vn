@@ -32,6 +32,10 @@ export interface ApplicationDTO {
   cvName: string;
   cvUrl: string;
   coverLetter?: string;
+  interviewDate?: string;
+  interviewTime?: string;
+  interviewLocation?: string;
+  interviewNote?: string;
   status: ApplicationStatus;
   createdAt: Date;
   updatedAt: Date;

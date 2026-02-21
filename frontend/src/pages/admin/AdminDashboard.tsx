@@ -110,25 +110,21 @@ export default function AdminDashboard() {
             <StatsCard
               title="Tổng người dùng"
               value={stats.totalUsers}
-              icon="👥"
               color="blue"
             />
             <StatsCard
               title="Tổng tin tuyển dụng"
               value={stats.totalJobs}
-              icon="💼"
               color="green"
             />
             <StatsCard
               title="Tổng đơn ứng tuyển"
               value={stats.totalApplications}
-              icon="📄"
               color="purple"
             />
             <StatsCard
-              title="Doanh thu"
-              value={`${stats.revenue.toLocaleString()} VND`}
-              icon="💰"
+              title="Ứng viên"
+              value={stats.totalCandidates}
               color="yellow"
             />
           </div>
@@ -138,9 +134,9 @@ export default function AdminDashboard() {
               <h2 className="text-xl font-semibold text-gray-900 mb-4">
                 Người dùng theo thời gian
               </h2>
-              {stats.usersOverTime && stats.usersOverTime.length > 0 ? (
+              {stats.newUsersChart && stats.newUsersChart.length > 0 ? (
                 <div className="space-y-2">
-                  {stats.usersOverTime.slice(-10).map((item, index) => (
+                  {stats.newUsersChart.slice(-10).map((item, index) => (
                     <div key={index} className="flex items-center justify-between">
                       <span className="text-sm text-gray-600">
                         {new Date(item.date).toLocaleDateString('vi-VN')}
@@ -150,12 +146,12 @@ export default function AdminDashboard() {
                           <div
                             className="bg-blue-600 h-2 rounded-full"
                             style={{
-                              width: `${Math.min(100, (item.count / Math.max(...stats.usersOverTime.map(i => i.count))) * 100)}%`
+                              width: `${Math.min(100, (item.value / Math.max(...stats.newUsersChart.map(i => i.value))) * 100)}%`
                             }}
                           />
                         </div>
                         <span className="text-sm font-medium text-gray-900 w-12 text-right">
-                          {item.count}
+                          {item.value}
                         </span>
                       </div>
                     </div>
@@ -170,9 +166,9 @@ export default function AdminDashboard() {
               <h2 className="text-xl font-semibold text-gray-900 mb-4">
                 Tin tuyển dụng theo thời gian
               </h2>
-              {stats.jobsOverTime && stats.jobsOverTime.length > 0 ? (
+              {stats.jobsChart && stats.jobsChart.length > 0 ? (
                 <div className="space-y-2">
-                  {stats.jobsOverTime.slice(-10).map((item, index) => (
+                  {stats.jobsChart.slice(-10).map((item, index) => (
                     <div key={index} className="flex items-center justify-between">
                       <span className="text-sm text-gray-600">
                         {new Date(item.date).toLocaleDateString('vi-VN')}
@@ -182,12 +178,12 @@ export default function AdminDashboard() {
                           <div
                             className="bg-green-600 h-2 rounded-full"
                             style={{
-                              width: `${Math.min(100, (item.count / Math.max(...stats.jobsOverTime.map(i => i.count))) * 100)}%`
+                              width: `${Math.min(100, (item.value / Math.max(...stats.jobsChart.map(i => i.value))) * 100)}%`
                             }}
                           />
                         </div>
                         <span className="text-sm font-medium text-gray-900 w-12 text-right">
-                          {item.count}
+                          {item.value}
                         </span>
                       </div>
                     </div>
@@ -207,16 +203,16 @@ export default function AdminDashboard() {
               <div className="p-4 bg-blue-50 rounded-lg">
                 <p className="text-sm text-blue-600 font-medium mb-1">Trung bình người dùng/ngày</p>
                 <p className="text-2xl font-bold text-blue-900">
-                  {stats.usersOverTime && stats.usersOverTime.length > 0
-                    ? Math.round(stats.usersOverTime.reduce((sum, item) => sum + item.count, 0) / stats.usersOverTime.length)
+                  {stats.newUsersChart && stats.newUsersChart.length > 0
+                    ? Math.round(stats.newUsersChart.reduce((sum, item) => sum + item.value, 0) / stats.newUsersChart.length)
                     : 0}
                 </p>
               </div>
               <div className="p-4 bg-green-50 rounded-lg">
                 <p className="text-sm text-green-600 font-medium mb-1">Trung bình tin tuyển dụng/ngày</p>
                 <p className="text-2xl font-bold text-green-900">
-                  {stats.jobsOverTime && stats.jobsOverTime.length > 0
-                    ? Math.round(stats.jobsOverTime.reduce((sum, item) => sum + item.count, 0) / stats.jobsOverTime.length)
+                  {stats.jobsChart && stats.jobsChart.length > 0
+                    ? Math.round(stats.jobsChart.reduce((sum, item) => sum + item.value, 0) / stats.jobsChart.length)
                     : 0}
                 </p>
               </div>
@@ -239,7 +235,7 @@ export default function AdminDashboard() {
 interface StatsCardProps {
   title: string
   value: string | number
-  icon: string
+  icon?: string
   color: 'blue' | 'green' | 'purple' | 'yellow'
 }
 
@@ -255,7 +251,7 @@ function StatsCard({ title, value, icon, color }: StatsCardProps) {
     <div className="bg-white rounded-lg shadow-md p-6">
       <div className="flex items-center justify-between mb-4">
         <div className={`w-12 h-12 rounded-lg ${colorClasses[color]} flex items-center justify-center text-2xl`}>
-          {icon}
+          {icon && <span>{icon}</span>}
         </div>
       </div>
       <h3 className="text-sm font-medium text-gray-600 mb-1">{title}</h3>

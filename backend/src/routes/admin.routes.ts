@@ -13,6 +13,7 @@ router.use(requireAdmin);
 router.get('/users', AdminController.listUsers);
 router.post('/users/:userId/lock', AdminController.lockUser);
 router.post('/users/:userId/unlock', AdminController.unlockUser);
+router.post('/users/:userId/reject', AdminController.rejectUser);
 router.post('/users/:userId/warning', AdminController.sendWarning);
 router.delete('/users/:userId', AdminController.deleteUser);
 

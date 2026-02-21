@@ -150,8 +150,10 @@ class UserController {
   async searchCandidates(req: AuthRequest, res: Response) {
     try {
       const query = req.query.q as string || '';
-      const candidates = await UserService.searchCandidates(query);
-      res.json(candidates);
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 9;
+      const result = await UserService.searchCandidates(query, page, limit);
+      res.json(result);
     } catch (error: any) {
       res.status(400).json({ error: error.message });
     }

@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import type { Job } from '../../../types/job.types'
+import { API_BASE_URL } from '../../../constants/api'
 
 interface JobCardProps {
   job: Job
@@ -53,9 +54,9 @@ export function JobCard({ job, variant = 'grid', onApply }: JobCardProps) {
         <div className="flex items-start justify-between gap-4">
           {/* Company logo */}
           <div className="flex-shrink-0">
-            {job.company?.logo ? (
+            {job.company?.logoUrl ? (
               <img
-                src={job.company.logo}
+                src={job.company.logoUrl.startsWith('http') ? job.company.logoUrl : `${API_BASE_URL}${job.company.logoUrl}`}
                 alt={job.company.name}
                 className="w-16 h-16 rounded-lg object-cover"
               />
@@ -130,9 +131,9 @@ export function JobCard({ job, variant = 'grid', onApply }: JobCardProps) {
       {/* Company logo header */}
       <div className="p-4 border-b border-slate-200 dark:border-slate-800">
         <div className="flex items-center gap-3">
-          {job.company?.logo ? (
+          {job.company?.logoUrl ? (
             <img
-              src={job.company.logo}
+              src={job.company.logoUrl.startsWith('http') ? job.company.logoUrl : `${API_BASE_URL}${job.company.logoUrl}`}
               alt={job.company.name}
               className="w-12 h-12 rounded-lg object-cover"
             />

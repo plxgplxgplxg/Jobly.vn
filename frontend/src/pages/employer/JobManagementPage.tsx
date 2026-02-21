@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { jobService } from '../../services/api/job.service'
 import type { Job } from '../../types/job.types'
 import { useUIStore } from '../../store/uiStore'
+import { Pagination } from '../../components/common/Pagination'
 
 const STATUS_LABELS: Record<string, { label: string; color: string }> = {
   pending: { label: 'Chờ duyệt', color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200' },
@@ -13,20 +14,24 @@ const STATUS_LABELS: Record<string, { label: string; color: string }> = {
 
 export function JobManagementPage() {
   const { addNotification } = useUIStore()
-  
+
   const [jobs, setJobs] = useState<Job[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(0)
+  const ITEMS_PER_PAGE = 10
 
   useEffect(() => {
     loadJobs()
-  }, [])
+  }, [currentPage])
 
   const loadJobs = async () => {
     try {
       setIsLoading(true)
-      const data = await jobService.getMyJobs()
-      setJobs(data)
+      const data = await jobService.getMyJobs({ page: currentPage, limit: ITEMS_PER_PAGE })
+      setJobs(data.items)
+      setTotalPages(data.totalPages)
     } catch (error: any) {
       addNotification({
         type: 'error',
@@ -188,6 +193,7 @@ export function JobManagementPage() {
                 </div>
               </div>
             ))}
+            <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
           </div>
         )}
 

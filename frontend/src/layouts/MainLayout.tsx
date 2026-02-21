@@ -1,7 +1,9 @@
 import { Outlet, Link, useNavigate } from 'react-router-dom'
-import { useAuthStore } from '../store/authStore'
+import { useAuthStore, UserRole } from '../store/authStore'
 import { useUIStore } from '../store/uiStore'
 import { API_BASE_URL } from '../constants/api'
+import { FloatingChat } from '../components/features/messages/FloatingChat'
+import { NotificationBell } from '../components/common/NotificationBell'
 
 export function MainLayout() {
   const navigate = useNavigate()
@@ -29,15 +31,35 @@ export function MainLayout() {
               </Link>
 
               <nav className="hidden md:flex items-center gap-6">
-                <Link to="/jobs" className="text-sm font-semibold hover:text-primary transition-colors">
-                  Tìm việc
-                </Link>
-                <Link to="/companies" className="text-sm font-semibold hover:text-primary transition-colors">
-                  Công ty
-                </Link>
-                <Link to="/cv-builder" className="text-sm font-semibold hover:text-primary transition-colors">
-                  Tạo CV
-                </Link>
+                {user?.role === UserRole.EMPLOYER ? (
+                  <>
+                    <Link to="/employer/jobs" className="text-sm font-semibold hover:text-primary transition-colors">
+                      Quản lý tin
+                    </Link>
+                    <Link to="/employer/candidates" className="text-sm font-semibold hover:text-primary transition-colors">
+                      Tìm ứng viên
+                    </Link>
+                    <Link to="/employer/jobs/new" className="text-sm font-semibold hover:text-primary transition-colors text-primary border border-primary/20 bg-primary/5 px-3 py-1 rounded-md">
+                      Đăng tin
+                    </Link>
+                  </>
+                ) : user?.role === UserRole.ADMIN ? (
+                  <Link to="/admin/dashboard" className="text-sm font-semibold hover:text-primary transition-colors">
+                    Trang quản trị
+                  </Link>
+                ) : (
+                  <>
+                    <Link to="/jobs" className="text-sm font-semibold hover:text-primary transition-colors">
+                      Tìm việc
+                    </Link>
+                    <Link to="/companies" className="text-sm font-semibold hover:text-primary transition-colors">
+                      Công ty
+                    </Link>
+                    <Link to="/cv-builder" className="text-sm font-semibold hover:text-primary transition-colors">
+                      Tạo CV
+                    </Link>
+                  </>
+                )}
               </nav>
             </div>
 
@@ -54,11 +76,19 @@ export function MainLayout() {
                 </span>
               </button>
 
+              {isAuthenticated && <NotificationBell />}
+
               {isAuthenticated ? (
                 <div className="relative group">
                   <div className="flex items-center gap-2 cursor-pointer px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
                     <div className="w-8 h-8 rounded-full bg-primary/20 overflow-hidden flex items-center justify-center text-primary font-bold text-sm">
-                      {user?.avatarUrl ? (
+                      {user?.role === UserRole.EMPLOYER && user.company?.logoUrl ? (
+                        <img
+                          src={user.company.logoUrl.startsWith('http') ? user.company.logoUrl : `${API_BASE_URL}${user.company.logoUrl}`}
+                          alt={user.company.name}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : user?.avatarUrl ? (
                         <img
                           src={user.avatarUrl.startsWith('http') ? user.avatarUrl : `${API_BASE_URL}${user.avatarUrl}`}
                           alt={user.name}
@@ -81,34 +111,77 @@ export function MainLayout() {
                       <p className="text-xs text-slate-500 dark:text-slate-400">{user?.email}</p>
                     </div>
                     <div className="p-2">
-                      <Link
-                        to="/candidate/dashboard"
-                        className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-                      >
-                        <span className="material-symbols-outlined text-slate-600 dark:text-slate-400 text-lg">dashboard</span>
-                        <span className="text-sm text-slate-700 dark:text-slate-300">Bảng điều khiển</span>
-                      </Link>
-                      <Link
-                        to="/candidate/profile"
-                        className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-                      >
-                        <span className="material-symbols-outlined text-slate-600 dark:text-slate-400 text-lg">person</span>
-                        <span className="text-sm text-slate-700 dark:text-slate-300">Hồ sơ cá nhân</span>
-                      </Link>
-                      <Link
-                        to="/candidate/cv-management"
-                        className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-                      >
-                        <span className="material-symbols-outlined text-slate-600 dark:text-slate-400 text-lg">description</span>
-                        <span className="text-sm text-slate-700 dark:text-slate-300">Quản lý CV</span>
-                      </Link>
-                      <Link
-                        to="/candidate/applications"
-                        className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-                      >
-                        <span className="material-symbols-outlined text-slate-600 dark:text-slate-400 text-lg">work</span>
-                        <span className="text-sm text-slate-700 dark:text-slate-300">Việc đã ứng tuyển</span>
-                      </Link>
+                      {user?.role === UserRole.EMPLOYER ? (
+                        <>
+                          <Link
+                            to="/employer/dashboard"
+                            className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                          >
+                            <span className="material-symbols-outlined text-slate-600 dark:text-slate-400 text-lg">dashboard</span>
+                            <span className="text-sm text-slate-700 dark:text-slate-300">Bảng điều khiển</span>
+                          </Link>
+                          <Link
+                            to="/employer/jobs"
+                            className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                          >
+                            <span className="material-symbols-outlined text-slate-600 dark:text-slate-400 text-lg">work</span>
+                            <span className="text-sm text-slate-700 dark:text-slate-300">Quản lý tin tuyển dụng</span>
+                          </Link>
+                          <Link
+                            to="/employer/applications"
+                            className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                          >
+                            <span className="material-symbols-outlined text-slate-600 dark:text-slate-400 text-lg">folder_shared</span>
+                            <span className="text-sm text-slate-700 dark:text-slate-300">Hồ sơ ứng tuyển</span>
+                          </Link>
+                          <Link
+                            to="/employer/profile"
+                            className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                          >
+                            <span className="material-symbols-outlined text-slate-600 dark:text-slate-400 text-lg">business</span>
+                            <span className="text-sm text-slate-700 dark:text-slate-300">Thông tin công ty</span>
+                          </Link>
+                        </>
+                      ) : user?.role === UserRole.ADMIN ? (
+                        <Link
+                          to="/admin/dashboard"
+                          className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                        >
+                          <span className="material-symbols-outlined text-slate-600 dark:text-slate-400 text-lg">dashboard</span>
+                          <span className="text-sm text-slate-700 dark:text-slate-300">Bảng điều khiển</span>
+                        </Link>
+                      ) : (
+                        <>
+                          <Link
+                            to="/candidate/dashboard"
+                            className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                          >
+                            <span className="material-symbols-outlined text-slate-600 dark:text-slate-400 text-lg">dashboard</span>
+                            <span className="text-sm text-slate-700 dark:text-slate-300">Bảng điều khiển</span>
+                          </Link>
+                          <Link
+                            to="/candidate/profile"
+                            className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                          >
+                            <span className="material-symbols-outlined text-slate-600 dark:text-slate-400 text-lg">person</span>
+                            <span className="text-sm text-slate-700 dark:text-slate-300">Hồ sơ cá nhân</span>
+                          </Link>
+                          <Link
+                            to="/candidate/cv-management"
+                            className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                          >
+                            <span className="material-symbols-outlined text-slate-600 dark:text-slate-400 text-lg">description</span>
+                            <span className="text-sm text-slate-700 dark:text-slate-300">Quản lý CV</span>
+                          </Link>
+                          <Link
+                            to="/candidate/applications"
+                            className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                          >
+                            <span className="material-symbols-outlined text-slate-600 dark:text-slate-400 text-lg">assignment</span>
+                            <span className="text-sm text-slate-700 dark:text-slate-300">Việc đã ứng tuyển</span>
+                          </Link>
+                        </>
+                      )}
                     </div>
                     <div className="p-2 border-t border-slate-200 dark:border-slate-800">
                       <button
@@ -208,12 +281,15 @@ export function MainLayout() {
         <div className="max-w-7xl mx-auto px-4 mt-16 pt-8 border-t border-slate-800 flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-slate-500">
           <p>© 2024 Jobly.vn - Bản quyền thuộc về Công ty CP Jobly Vietnam.</p>
           <div className="flex gap-6">
-            <Link to="/terms" className="hover:text-primary transition-colors">Điều khoản dịch vụ</Link>
+            {/* <Link to="/terms" className="hover:text-primary transition-colors">Điều khoản dịch vụ</Link>
             <Link to="/privacy" className="hover:text-primary transition-colors">Chính sách bảo mật</Link>
-            <Link to="/help" className="hover:text-primary transition-colors">Trợ giúp</Link>
+            <Link to="/help" className="hover:text-primary transition-colors">Trợ giúp</Link> */}
           </div>
         </div>
       </footer>
+
+      {/* Floating Chat Widget */}
+      <FloatingChat />
     </div>
   )
 }

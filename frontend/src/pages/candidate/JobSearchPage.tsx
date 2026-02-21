@@ -6,6 +6,7 @@ import { JobCard } from '../../components/features/jobs/JobCard'
 import { jobService } from '../../services/api/job.service'
 import type { Job, SearchQuery } from '../../types/job.types'
 import { useUIStore } from '../../store/uiStore'
+import { Pagination } from '../../components/common/Pagination'
 
 export function JobSearchPage() {
   const navigate = useNavigate()
@@ -184,51 +185,11 @@ export function JobSearchPage() {
                 </div>
 
                 {/* Pagination */}
-                {totalPages > 1 && (
-                  <div className="mt-8 flex justify-center">
-                    <nav className="flex items-center gap-2">
-                      <button
-                        onClick={() => handlePageChange(currentPage - 1)}
-                        disabled={currentPage === 1}
-                        className="px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-700 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-100 dark:hover:bg-slate-800 font-medium transition-all"
-                      >
-                        Trước
-                      </button>
-
-                      {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
-                        if (
-                          page === 1 ||
-                          page === totalPages ||
-                          (page >= currentPage - 1 && page <= currentPage + 1)
-                        ) {
-                          return (
-                            <button
-                              key={page}
-                              onClick={() => handlePageChange(page)}
-                              className={`px-4 py-2 rounded-lg font-medium transition-all ${page === currentPage
-                                ? 'bg-primary text-white shadow-lg shadow-primary/30'
-                                : 'border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800'
-                                }`}
-                            >
-                              {page}
-                            </button>
-                          )
-                        } else if (page === currentPage - 2 || page === currentPage + 2) {
-                          return <span key={page} className="px-2 text-slate-400">...</span>
-                        }
-                        return null
-                      })}
-
-                      <button
-                        onClick={() => handlePageChange(currentPage + 1)}
-                        disabled={currentPage === totalPages}
-                        className="px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-700 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-100 dark:hover:bg-slate-800 font-medium transition-all"
-                      >
-                        Sau
-                      </button>
-                    </nav>
-                  </div>
-                )}
+                <Pagination
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  onPageChange={handlePageChange}
+                />
               </>
             )}
           </div>

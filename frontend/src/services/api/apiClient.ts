@@ -42,10 +42,13 @@ class ApiClient {
 
           if (status === 401) {
             // Token expired, xóa token và redirect đến login
-            localStorage.removeItem(APP_CONFIG.STORAGE_KEYS.TOKEN)
-            localStorage.removeItem(APP_CONFIG.STORAGE_KEYS.REFRESH_TOKEN)
-            localStorage.removeItem(APP_CONFIG.STORAGE_KEYS.USER)
-            window.location.href = '/auth/login'
+            // Không redirect nếu đang ở trang login hoặc request là login
+            if (!window.location.pathname.includes('/auth/login') && !error.config?.url?.includes('/auth/login')) {
+              localStorage.removeItem(APP_CONFIG.STORAGE_KEYS.TOKEN)
+              localStorage.removeItem(APP_CONFIG.STORAGE_KEYS.REFRESH_TOKEN)
+              localStorage.removeItem(APP_CONFIG.STORAGE_KEYS.USER)
+              window.location.href = '/auth/login'
+            }
           } else if (status === 403) {
             // Forbidden - không có quyền truy cập
             console.error('Forbidden: Bạn không có quyền truy cập')

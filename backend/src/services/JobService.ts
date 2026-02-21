@@ -195,7 +195,8 @@ class JobService {
         taxCode: job.company.taxCode,
         industry: job.company.industry,
         logoUrl: job.company.logoUrl,
-        description: job.company.description
+        description: job.company.description,
+        userId: job.company.userId
       } : undefined,
       createdAt: job.createdAt,
       updatedAt: job.updatedAt

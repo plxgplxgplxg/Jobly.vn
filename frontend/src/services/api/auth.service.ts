@@ -1,5 +1,6 @@
 import { apiClient } from './apiClient'
-import { UserRole } from '../../store/authStore'
+
+import type { User } from '../../types/user.types'
 
 export interface RegisterData {
   email: string
@@ -14,7 +15,7 @@ export interface RegisterData {
 
 export interface RegisterResponse {
   token?: string
-  user?: AuthResponse['user']
+  user?: User
   refreshToken?: string
   message: string
 }
@@ -30,18 +31,7 @@ export interface LoginCredentials {
 }
 
 export interface AuthResponse {
-  user: {
-    id: string
-    email: string
-    phone: string
-    role: UserRole
-    firstName: string
-    lastName: string
-    avatar?: string
-    isActive: boolean
-    createdAt: string
-    updatedAt: string
-  }
+  user: User
   token: string
   refreshToken: string
 }

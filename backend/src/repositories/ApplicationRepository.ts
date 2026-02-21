@@ -39,13 +39,17 @@ class ApplicationRepository {
     return application;
   }
 
-  async updateStatus(id: string, status: ApplicationStatus, changedBy?: string): Promise<Application | null> {
+  async updateStatus(id: string, status: ApplicationStatus, changedBy?: string, additionalData?: any): Promise<Application | null> {
     const application = await Application.findByPk(id);
     if (!application) return null;
 
-    await application.update({ status });
+    const updateData: any = { status };
+    if (additionalData) {
+      Object.assign(updateData, additionalData);
+    }
 
-    // Lưu lịch sử thay đổi status
+    await application.update(updateData);
+
     await ApplicationStatusHistory.create({
       applicationId: id,
       status,
@@ -143,10 +147,72 @@ class ApplicationRepository {
     };
   }
 
+  async listByJobIds(jobIds: string[], filters: ApplicationFilterDTO): Promise<PaginatedResult<Application>> {
+    const { status, dateFrom, dateTo, page, limit } = filters;
+    const offset = (page - 1) * limit;
+
+    const where: any = { jobId: { [Op.in]: jobIds } };
+
+    if (status) where.status = status;
+    if (dateFrom) where.appliedAt = { [Op.gte]: dateFrom };
+    if (dateTo) {
+      where.appliedAt = where.appliedAt || {};
+      where.appliedAt[Op.lte] = dateTo;
+    }
+
+    const { count, rows } = await Application.findAndCountAll({
+      where,
+      include: [
+        {
+          model: User,
+          as: 'candidate',
+          attributes: ['id', 'name', 'email', 'phone', 'address', 'experience', 'avatarUrl']
+        },
+        {
+          model: Job,
+          as: 'job',
+          include: [{ model: Company, as: 'company' }]
+        }
+      ],
+      order: [['appliedAt', 'DESC']],
+      limit,
+      offset
+    });
+
+    return {
+      items: rows,
+      total: count,
+      page,
+      limit,
+      totalPages: Math.ceil(count / limit)
+    };
+  }
+
   async getStatusHistory(applicationId: string): Promise<ApplicationStatusHistory[]> {
     return await ApplicationStatusHistory.findAll({
       where: { applicationId },
       order: [['changedAt', 'DESC']]
+    });
+  }
+
+  async findByCandidateAndJob(candidateId: string, jobId: string): Promise<Application | null> {
+    return Application.findOne({
+      where: {
+        candidate_id: candidateId,
+        job_id: jobId
+      },
+      include: [
+        {
+          model: Job,
+          as: 'job',
+          include: [{ model: Company, as: 'company' }]
+        },
+        {
+          model: User,
+          as: 'candidate',
+          attributes: ['id', 'email', 'phone', 'name', 'avatarUrl']
+        }
+      ]
     });
   }
 }

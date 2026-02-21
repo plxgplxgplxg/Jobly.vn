@@ -6,6 +6,7 @@ import { Button } from '../../components/common/Button'
 import { userService } from '../../services/api/user.service'
 import { useUIStore } from '../../store/uiStore'
 import { useAuthStore } from '../../store/authStore'
+import { INDUSTRIES } from '../../constants/industries'
 
 interface ProfileCompletionForm {
     name: string
@@ -331,14 +332,11 @@ export function ProfileCompletionPage() {
                                     className="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-primary dark:bg-slate-800 dark:text-white transition-all outline-none"
                                 >
                                     <option value="">Chọn ngành nghề</option>
-                                    <option value="Công nghệ thông tin">Công nghệ thông tin</option>
-                                    <option value="Kinh doanh">Kinh doanh</option>
-                                    <option value="Marketing">Marketing</option>
-                                    <option value="Tài chính">Tài chính</option>
-                                    <option value="Nhân sự">Nhân sự</option>
-                                    <option value="Hành chính">Hành chính</option>
-                                    <option value="Kế toán">Kế toán</option>
-                                    <option value="Khác">Khác</option>
+                                    {INDUSTRIES.map((industry) => (
+                                        <option key={industry} value={industry}>
+                                            {industry}
+                                        </option>
+                                    ))}
                                 </select>
                                 {errors.industry && (
                                     <p className="mt-1 text-sm text-red-600">{errors.industry.message}</p>

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { adminService, type UploadTemplateData } from '../../services/api/admin.service'
 import type { CVTemplate } from '../../services/api/cvTemplate.service'
+import { Pagination } from '../../components/common/Pagination'
 
 export default function TemplateManagementPage() {
   const [templates, setTemplates] = useState<CVTemplate[]>([])
@@ -9,17 +10,21 @@ export default function TemplateManagementPage() {
   const [showUploadModal, setShowUploadModal] = useState(false)
   const [selectedTemplate, setSelectedTemplate] = useState<CVTemplate | null>(null)
   const [showPreviewModal, setShowPreviewModal] = useState(false)
+  const [page, setPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(0)
+  const limit = 12
 
   useEffect(() => {
     loadTemplates()
-  }, [])
+  }, [page])
 
   const loadTemplates = async () => {
     try {
       setLoading(true)
       setError(null)
-      const data = await adminService.getTemplates()
-      setTemplates(data)
+      const data = await adminService.getTemplates({ page, limit })
+      setTemplates(data.items)
+      setTotalPages(data.totalPages)
     } catch (err) {
       setError('Không thể tải danh sách templates')
       console.error(err)
@@ -47,7 +52,7 @@ export default function TemplateManagementPage() {
     setShowPreviewModal(true)
   }
 
-  if (loading) {
+  if (loading && templates.length === 0) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
@@ -81,41 +86,45 @@ export default function TemplateManagementPage() {
           <p className="text-gray-500 text-lg">Chưa có template nào</p>
         </div>
       ) : (
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {templates.map((template) => (
-            <div key={template.id} className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
-              <div className="aspect-[3/4] bg-gray-100 relative overflow-hidden">
-                {template.thumbnail ? (
-                  <img
-                    src={template.thumbnail}
-                    alt={template.name}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-gray-400">
-                    <span className="text-4xl">📄</span>
-                  </div>
-                )}
-                <button
-                  onClick={() => handlePreview(template)}
-                  className="absolute inset-0 bg-black bg-opacity-0 hover:bg-opacity-50 transition-all flex items-center justify-center opacity-0 hover:opacity-100"
-                >
-                  <span className="text-white font-medium">Xem trước</span>
-                </button>
+        <>
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {templates.map((template) => (
+              <div key={template.id} className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
+                <div className="aspect-[3/4] bg-gray-100 relative overflow-hidden">
+                  {template.thumbnail ? (
+                    <img
+                      src={template.thumbnail}
+                      alt={template.name}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-gray-400">
+                      <span className="text-4xl">📄</span>
+                    </div>
+                  )}
+                  <button
+                    onClick={() => handlePreview(template)}
+                    className="absolute inset-0 bg-black bg-opacity-0 hover:bg-opacity-50 transition-all flex items-center justify-center opacity-0 hover:opacity-100"
+                  >
+                    <span className="text-white font-medium">Xem trước</span>
+                  </button>
+                </div>
+                <div className="p-4">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">{template.name}</h3>
+                  <p className="text-sm text-gray-600 mb-4 line-clamp-2">{template.description}</p>
+                  <button
+                    onClick={() => handleDeleteTemplate(template.id)}
+                    className="w-full px-4 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors font-medium"
+                  >
+                    Xóa
+                  </button>
+                </div>
               </div>
-              <div className="p-4">
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">{template.name}</h3>
-                <p className="text-sm text-gray-600 mb-4 line-clamp-2">{template.description}</p>
-                <button
-                  onClick={() => handleDeleteTemplate(template.id)}
-                  className="w-full px-4 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors font-medium"
-                >
-                  Xóa
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+
+          <Pagination currentPage={page} totalPages={totalPages} onPageChange={setPage} />
+        </>
       )}
 
       {showUploadModal && (
@@ -154,7 +163,7 @@ function UploadTemplateModal({ onClose, onSuccess }: { onClose: () => void; onSu
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+
     if (!formData.name || !formData.htmlTemplate) {
       setError('Vui lòng điền đầy đủ thông tin bắt buộc')
       return

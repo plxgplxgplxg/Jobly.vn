@@ -1,0 +1,22 @@
+export const INDUSTRIES = [
+    'Công nghệ thông tin',
+    'Kinh doanh',
+    'Marketing',
+    'Tài chính',
+    'Nhân sự',
+    'Hành chính',
+    'Kế toán',
+    'Xây dựng',
+    'Kiến trúc',
+    'Giáo dục',
+    'Y tế',
+    'Du lịch - Khách sạn',
+    'Nông nghiệp',
+    'Sản xuất',
+    'Vận tải - Logistics',
+    'Bán lẻ',
+    'Ngân hàng',
+    'Bất động sản',
+    'Truyền thông - Quảng cáo',
+    'Khác'
+]

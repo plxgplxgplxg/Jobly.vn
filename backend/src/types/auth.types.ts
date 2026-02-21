@@ -22,6 +22,7 @@ export interface UserDTO {
   role: string;
   status: string;
   avatarUrl?: string;
+  company?: any;
 }
 
 export interface AuthResponse {

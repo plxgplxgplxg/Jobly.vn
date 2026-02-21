@@ -40,7 +40,7 @@ export interface RegisterData {
 }
 
 // Application types
-export type ApplicationStatus = 'pending' | 'reviewed' | 'accepted' | 'rejected'
+export type ApplicationStatus = 'submitted' | 'pending' | 'reviewing' | 'interview' | 'accepted' | 'rejected' | 'withdrawn'
 
 export interface CV {
   id: string
@@ -66,6 +66,10 @@ export interface Application {
   cvName: string
   cvUrl: string
   coverLetter?: string
+  interviewDate?: string
+  interviewTime?: string
+  interviewLocation?: string
+  interviewNote?: string
   status: ApplicationStatus
   createdAt: string
   updatedAt: string

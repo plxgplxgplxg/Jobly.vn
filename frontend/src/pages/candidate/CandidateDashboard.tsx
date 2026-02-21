@@ -94,8 +94,9 @@ export function CandidateDashboard() {
             {/* Stats Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 {stats.map((stat) => (
-                    <div
+                    <Link
                         key={stat.label}
+                        to={stat.label === 'Công việc đã lưu' ? '/candidate/saved-jobs' : (stat.label === 'Đơn ứng tuyển' ? '/candidate/applications' : (stat.label === 'CV đã tải lên' ? '/candidate/cv-management' : '/candidate/messages'))}
                         className="bg-white dark:bg-slate-900 rounded-xl p-6 border border-slate-200 dark:border-slate-800 hover:shadow-lg transition-shadow"
                     >
                         <div className="flex items-center justify-between">
@@ -109,7 +110,7 @@ export function CandidateDashboard() {
                                 </span>
                             </div>
                         </div>
-                    </div>
+                    </Link>
                 ))}
             </div>
 
@@ -201,7 +202,7 @@ export function CandidateDashboard() {
                                     className="block p-4 rounded-lg border border-slate-200 dark:border-slate-700 hover:border-primary/50 hover:shadow-md transition-all"
                                 >
                                     <h3 className="font-bold text-slate-900 dark:text-slate-100 mb-1">{job.title}</h3>
-                                    <p className="text-sm text-slate-600 dark:text-slate-400 mb-2">{job.companyName}</p>
+                                    <p className="text-sm text-slate-600 dark:text-slate-400 mb-2">{job.company?.name}</p>
                                     <div className="flex items-center gap-4 text-xs text-slate-500 dark:text-slate-400">
                                         <span className="flex items-center gap-1">
                                             <span className="material-symbols-outlined text-sm">payments</span>
